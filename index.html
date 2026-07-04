@@ -11,19 +11,24 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<div class="dynamic-background"></div>
+
 <nav class="nav-bar">
     <div class="nav-container">
         <div class="brand-logo">DevPortfolio</div>
         <div class="nav-links">
             <a href="#projects">Projects</a>
             <a href="#contact">Contact</a>
+            <button id="theme-toggle" class="theme-btn" aria-label="Toggle Theme">
+                <i class="fas fa-moon"></i>
+            </button>
         </div>
     </div>
 </nav>
 
 <main class="main-container">
     <section class="hero-section">
-        <div class="hero-card glass-panel">
+        <div class="hero-card glass-panel scroll-reveal">
             <h1>Crafting scalable solutions and resilient architectures.</h1>
             <p>Full-stack developer focused on building efficient, user-centric applications. Experienced in backend systems, modern web frameworks, and automated workflows.</p>
             <div class="action-group">
@@ -34,11 +39,11 @@
     </section>
 
     <section id="projects" class="projects-section">
-        <div class="section-header">
+        <div class="section-header scroll-reveal">
             <h2>Selected Projects</h2>
         </div>
 
-        <div class="controls-bar glass-panel">
+        <div class="controls-bar glass-panel scroll-reveal">
             <div class="search-input-group">
                 <i class="fas fa-search"></i>
                 <input type="text" id="search-input" placeholder="Search projects by title...">
@@ -58,10 +63,10 @@
         </div>
 
         <div class="projects-wrapper">
-            <h3 class="category-title">Featured Projects</h3>
+            <h3 class="category-title scroll-reveal">Featured Projects</h3>
             <div class="projects-grid featured-grid" id="featured-grid">
 
-                <article class="project-card glass-panel featured-card" data-title="Vault of Chances" data-language="Python" data-date="2024-02-15">
+                <article class="project-card glass-panel featured-card scroll-reveal" data-title="Vault of Chances" data-language="Python" data-date="2024-02-15">
                     <div class="card-content">
                         <h3>Vault of Chances</h3>
                         <p>A sophisticated data visualization dashboard tracking real-time statistical probabilities and market trends.</p>
@@ -76,7 +81,7 @@
                     </div>
                 </article>
 
-                <article class="project-card glass-panel featured-card" data-title="Thief Detection Notifier" data-language="Python" data-date="2024-01-10">
+                <article class="project-card glass-panel featured-card scroll-reveal" data-title="Thief Detection Notifier" data-language="Python" data-date="2024-01-10">
                     <div class="card-content">
                         <h3>Thief Detection Notifier</h3>
                         <p>Security automation tool utilizing OpenCV for motion detection and AWS SNS for immediate SMS alerts.</p>
@@ -90,7 +95,7 @@
                     </div>
                 </article>
 
-                <article class="project-card glass-panel featured-card" data-title="Hotel Booking Application" data-language="JavaScript" data-date="2023-11-20">
+                <article class="project-card glass-panel featured-card scroll-reveal" data-title="Hotel Booking Application" data-language="JavaScript" data-date="2023-11-20">
                     <div class="card-content">
                         <h3>Hotel Booking Application</h3>
                         <p>Full-stack reservation platform featuring real-time availability, secure payments, and an administrative dashboard.</p>
@@ -105,7 +110,7 @@
                     </div>
                 </article>
 
-                <article class="project-card glass-panel featured-card" data-title="BattleShip Game" data-language="Java" data-date="2023-08-22">
+                <article class="project-card glass-panel featured-card scroll-reveal" data-title="BattleShip Game" data-language="Java" data-date="2023-08-22">
                     <div class="card-content">
                         <h3>BattleShip Game</h3>
                         <p>A classic strategic board game reimagined with a custom graphical interface and advanced AI opponent logic.</p>
@@ -121,10 +126,10 @@
 
             </div>
 
-            <h3 class="category-title">Other Projects</h3>
+            <h3 class="category-title scroll-reveal">Other Projects</h3>
             <div class="projects-grid compact-grid" id="other-grid">
 
-                <article class="project-card glass-panel compact-card" data-title="Distributed Task Queue" data-language="JavaScript" data-date="2023-10-05">
+                <article class="project-card glass-panel compact-card scroll-reveal" data-title="Distributed Task Queue" data-language="JavaScript" data-date="2023-10-05">
                     <div class="card-content">
                         <h4>Distributed Task Queue</h4>
                         <p>High-performance asynchronous job queue built with Node.js and Redis.</p>
@@ -138,7 +143,7 @@
                     </div>
                 </article>
 
-                <article class="project-card glass-panel compact-card" data-title="Terminal Weather Fetcher" data-language="Python" data-date="2023-06-12">
+                <article class="project-card glass-panel compact-card scroll-reveal" data-title="Terminal Weather Fetcher" data-language="Python" data-date="2023-06-12">
                     <div class="card-content">
                         <h4>Terminal Weather Fetcher</h4>
                         <p>Lightweight CLI utility for retrieving global weather forecasts.</p>
@@ -157,7 +162,7 @@
     </section>
 
     <section id="contact" class="contact-section">
-        <div class="contact-grid glass-panel">
+        <div class="contact-grid glass-panel scroll-reveal">
             <div class="contact-details">
                 <h2>Let's Connect</h2>
                 <p>I am currently open to new opportunities. Whether you have a question or just want to say hi, I will try my best to get back to you.</p>
@@ -180,7 +185,10 @@
                         <label for="message">Message</label>
                         <textarea id="message" name="message" rows="5" required placeholder=""></textarea>
                     </div>
-                    <button type="submit" class="btn btn-primary btn-submit">Send Message <i class="fas fa-paper-plane"></i></button>
+                    <button type="submit" class="btn btn-primary btn-submit">
+                        <span>Send Message</span>
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
                 </form>
             </div>
         </div>
