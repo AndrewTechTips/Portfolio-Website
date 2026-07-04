@@ -227,9 +227,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const contactForm = document.getElementById("contact-form");
-    const statusMessage = document.getElementById("form-status");
-    const submitBtn = document.querySelector(".submit-action");
+    const statusBox = document.getElementById("form-status");
+    const statusIcon = document.getElementById("form-status-icon");
+    const statusText = document.getElementById("form-status-text");
+    const submitBtn = contactForm ? contactForm.querySelector(".submit-action") : null;
     const btnText = submitBtn ? submitBtn.querySelector("span") : null;
+
+    const successSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`;
+    const errorSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`;
 
     if (contactForm) {
         contactForm.addEventListener("submit", function(e) {
@@ -240,20 +245,24 @@ document.addEventListener("DOMContentLoaded", () => {
             submitBtn.style.opacity = "0.7";
             submitBtn.style.pointerEvents = "none";
 
+            statusBox.classList.remove("show");
+
             const formData = new FormData(contactForm);
 
             fetch(contactForm.action, {
                 method: "POST",
                 body: formData,
-                headers: {
-                    'Accept': 'application/json'
-                }
+                headers: { 'Accept': 'application/json' }
             })
                 .then(response => response.json())
                 .then(data => {
-                    statusMessage.style.display = "block";
-                    statusMessage.style.color = "#4ade80";
-                    statusMessage.innerText = "Message sent successfully! I will get back to you soon.";
+                    statusIcon.innerHTML = successSVG;
+                    statusText.innerText = "Message sent successfully! I will get back to you soon.";
+
+                    statusBox.className = "form-status-message success";
+                    statusBox.style.display = "flex";
+
+                    setTimeout(() => { statusBox.classList.add("show"); }, 10);
 
                     contactForm.reset();
                     btnText.innerText = originalText;
@@ -261,13 +270,17 @@ document.addEventListener("DOMContentLoaded", () => {
                     submitBtn.style.pointerEvents = "auto";
 
                     setTimeout(() => {
-                        statusMessage.style.display = "none";
+                        statusBox.classList.remove("show");
+                        setTimeout(() => { statusBox.style.display = "none"; }, 400);
                     }, 5000);
                 })
                 .catch(error => {
-                    statusMessage.style.display = "block";
-                    statusMessage.style.color = "#f87171";
-                    statusMessage.innerText = "Oops! Something went wrong. Please try again.";
+                    statusIcon.innerHTML = errorSVG;
+                    statusText.innerText = "Oops! Something went wrong. Please try again.";
+
+                    statusBox.className = "form-status-message error";
+                    statusBox.style.display = "flex";
+                    setTimeout(() => { statusBox.classList.add("show"); }, 10);
 
                     btnText.innerText = originalText;
                     submitBtn.style.opacity = "1";
