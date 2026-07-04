@@ -15,7 +15,7 @@
   </p>
 
   <h3>
-    <a href="https://andrewtechtips.github.io/portfolio/">🔗 OPEN PORTFOLIO</a>
+    <a href="https://andrewtechtips.github.io/Portfolio-Website/">🔗 OPEN PORTFOLIO</a>
   </h3>
 
 </div>
