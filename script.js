@@ -91,6 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const featuredProjectsContainer = document.getElementById("featured-projects");
     const otherProjectsContainer = document.getElementById("other-projects");
+    const emptyState = document.getElementById("empty-state");
 
     if (searchInput && languageSelect && sortSelect && featuredProjectsContainer && otherProjectsContainer) {
 
@@ -103,6 +104,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const language = languageSelect.value;
             const sortMethod = sortSelect.value;
 
+            let visibleCount = 0;
+
             allCards.forEach(card => {
                 const title = card.getAttribute("data-title")?.toLowerCase() || "";
                 const cardLang = card.getAttribute("data-language") || "";
@@ -112,26 +115,41 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (matchesSearch && matchesLanguage) {
                     card.style.display = "flex";
+                    visibleCount++;
                 } else {
                     card.style.display = "none";
                 }
             });
 
-            const sortLogic = (a, b) => {
-                const dateA = new Date(a.getAttribute("data-date") || 0).getTime();
-                const dateB = new Date(b.getAttribute("data-date") || 0).getTime();
-                return sortMethod === "newest" ? dateB - dateA : dateA - dateB;
-            };
+            if (visibleCount === 0) {
+                emptyState.style.display = "flex";
+                featuredProjectsContainer.parentElement.style.display = "none";
+                otherProjectsContainer.parentElement.style.display = "none";
+            } else {
+                emptyState.style.display = "none";
 
-            const sortedFeatured = [...featuredCards].sort(sortLogic);
-            sortedFeatured.forEach((card, index) => {
-                card.style.order = index;
-            });
+                const sortLogic = (a, b) => {
+                    const dateA = new Date(a.getAttribute("data-date") || 0).getTime();
+                    const dateB = new Date(b.getAttribute("data-date") || 0).getTime();
+                    return sortMethod === "newest" ? dateB - dateA : dateA - dateB;
+                };
 
-            const sortedOther = [...otherCards].sort(sortLogic);
-            sortedOther.forEach((card, index) => {
-                card.style.order = index;
-            });
+                const sortedFeatured = [...featuredCards].sort(sortLogic);
+                sortedFeatured.forEach((card, index) => {
+                    card.style.order = index;
+                });
+
+                const sortedOther = [...otherCards].sort(sortLogic);
+                sortedOther.forEach((card, index) => {
+                    card.style.order = index;
+                });
+
+                const featuredVisible = sortedFeatured.some(c => c.style.display !== "none");
+                featuredProjectsContainer.parentElement.style.display = featuredVisible ? "block" : "none";
+
+                const otherVisible = sortedOther.some(c => c.style.display !== "none");
+                otherProjectsContainer.parentElement.style.display = otherVisible ? "block" : "none";
+            }
         };
 
         searchInput.addEventListener("input", filterAndSortProjects);

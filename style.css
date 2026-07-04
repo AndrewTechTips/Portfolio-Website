@@ -439,6 +439,48 @@ body {
     flex-direction: column;
 }
 
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 4rem 2rem;
+    margin: 2rem 0;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.empty-state svg {
+    width: 48px;
+    height: 48px;
+    color: var(--accent-base);
+    margin-bottom: 1.5rem;
+}
+
+.empty-state h3 {
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.empty-state p {
+    color: var(--text-secondary);
+    max-width: 400px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+@keyframes fadeUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .grid-featured {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
