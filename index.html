@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Software Developer Portfolio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav class="glass-nav">
+    <div class="nav-container">
+        <div class="logo">DevPortfolio</div>
+        <div class="nav-links">
+            <a href="#projects">Projects</a>
+            <a href="#contact">Contact</a>
+        </div>
+    </div>
+</nav>
+
+<main>
+    <section class="hero">
+        <div class="hero-content glass-panel">
+            <h1>Crafting scalable solutions and resilient architectures.</h1>
+            <p>Full-stack developer focused on building efficient, user-centric applications. Experienced in backend systems, modern web frameworks, and automated workflows.</p>
+            <div class="hero-actions">
+                <a href="#projects" class="btn btn-primary">View My Work</a>
+                <a href="#contact" class="btn btn-secondary">Get in Touch</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="projects" class="projects-section">
+        <div class="section-header">
+            <h2>Selected Projects</h2>
+        </div>
+
+        <div class="controls glass-panel">
+            <div class="search-wrapper">
+                <i class="fas fa-search"></i>
+                <input type="text" id="search-input" placeholder="Search projects by title...">
+            </div>
+            <div class="filters">
+                <select id="language-filter">
+                    <option value="all">All Languages</option>
+                    <option value="Python">Python</option>
+                    <option value="JavaScript">JavaScript</option>
+                    <option value="Java">Java</option>
+                </select>
+                <select id="date-sort">
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="project-grid" id="project-grid">
+
+            <article class="project-card glass-panel" data-title="Vault of Chances" data-language="Python" data-date="2023-11-15">
+                <div class="card-content">
+                    <h3>Vault of Chances</h3>
+                    <p>A sophisticated data visualization dashboard tracking real-time statistical probabilities and market trends.</p>
+                    <div class="badges">
+                        <span class="badge type-badge"><i class="fas fa-globe"></i> Live Web Demo</span>
+                        <span class="badge lang-badge"><i class="fab fa-python"></i> Python</span>
+                    </div>
+                </div>
+                <div class="card-actions">
+                    <a href="#" class="btn-icon"><i class="fab fa-github"></i> Source</a>
+                    <a href="#" class="btn-icon primary"><i class="fas fa-external-link-alt"></i> Demo</a>
+                </div>
+            </article>
+
+            <article class="project-card glass-panel" data-title="BattleShip Game" data-language="Java" data-date="2023-08-22">
+                <div class="card-content">
+                    <h3>BattleShip Game</h3>
+                    <p>A classic strategic board game reimagined with a custom graphical interface and advanced AI opponent logic.</p>
+                    <div class="badges">
+                        <span class="badge type-badge"><i class="fas fa-desktop"></i> Desktop App</span>
+                        <span class="badge lang-badge"><i class="fab fa-java"></i> Java</span>
+                    </div>
+                </div>
+                <div class="card-actions">
+                    <a href="#" class="btn-icon"><i class="fab fa-github"></i> Source</a>
+                </div>
+            </article>
+
+            <article class="project-card glass-panel" data-title="Thief Detection Notifier" data-language="Python" data-date="2024-01-10">
+                <div class="card-content">
+                    <h3>Thief Detection Notifier</h3>
+                    <p>Security automation tool utilizing OpenCV for motion detection and AWS SNS for immediate SMS alerts.</p>
+                    <div class="badges">
+                        <span class="badge type-badge"><i class="fas fa-terminal"></i> Terminal</span>
+                        <span class="badge lang-badge"><i class="fab fa-python"></i> Python</span>
+                    </div>
+                </div>
+                <div class="card-actions">
+                    <a href="#" class="btn-icon"><i class="fab fa-github"></i> Source</a>
+                </div>
+            </article>
+
+            <article class="project-card glass-panel" data-title="Distributed Task Queue" data-language="JavaScript" data-date="2023-10-05">
+                <div class="card-content">
+                    <h3>Distributed Task Queue</h3>
+                    <p>High-performance asynchronous job queue built with Node.js and Redis for managing microservice workflows.</p>
+                    <div class="badges">
+                        <span class="badge type-badge"><i class="fas fa-globe"></i> Live Web Demo</span>
+                        <span class="badge lang-badge"><i class="fab fa-js"></i> JavaScript</span>
+                    </div>
+                </div>
+                <div class="card-actions">
+                    <a href="#" class="btn-icon"><i class="fab fa-github"></i> Source</a>
+                    <a href="#" class="btn-icon primary"><i class="fas fa-external-link-alt"></i> Demo</a>
+                </div>
+            </article>
+
+        </div>
+    </section>
+
+    <section id="contact" class="contact-section">
+        <div class="contact-container glass-panel">
+            <div class="contact-info">
+                <h2>Let's Connect</h2>
+                <p>I am currently open to new opportunities. Whether you have a question or just want to say hi, I will try my best to get back to you.</p>
+                <div class="social-links">
+                    <a href="#" class="social-btn"><i class="fab fa-github"></i> GitHub</a>
+                    <a href="#" class="social-btn"><i class="fab fa-linkedin"></i> LinkedIn</a>
+                    <a href="mailto:your@email.com" class="social-btn"><i class="fas fa-envelope"></i> Email Direct</a>
+                </div>
+            </div>
+            <div class="contact-form-wrapper">
+                <form action="https://formsubmit.co/your@email.com" method="POST" class="contact-form">
+                    <input type="hidden" name="_subject" value="New inquiry from portfolio!">
+                    <input type="hidden" name="_captcha" value="false">
+
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" required placeholder="name@company.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="message">Message</label>
+                        <textarea id="message" name="message" rows="5" required placeholder="How can we work together?"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary submit-btn">Send Message <i class="fas fa-paper-plane"></i></button>
+                </form>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <p>&copy; 2026 Developer Portfolio. Built with focus and precision.</p>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
