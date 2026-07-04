@@ -1,0 +1,74 @@
+[
+  {
+    "title": "Vault of Chances",
+    "description": "A sophisticated data visualization dashboard tracking real-time statistical probabilities and market trends.",
+    "language": "Python",
+    "isFeatured": true,
+    "webapp": true,
+    "terminal": false,
+    "desktopApp": false,
+    "repoLink": "#",
+    "demoLink": "#",
+    "date": "2024-02-15"
+  },
+  {
+    "title": "Thief Detection Notifier",
+    "description": "Security automation tool utilizing OpenCV for motion detection and AWS SNS for immediate SMS alerts.",
+    "language": "Python",
+    "isFeatured": true,
+    "webapp": false,
+    "terminal": true,
+    "desktopApp": false,
+    "repoLink": "#",
+    "demoLink": null,
+    "date": "2024-01-10"
+  },
+  {
+    "title": "Hotel Booking Application",
+    "description": "Full-stack reservation platform featuring real-time availability, secure payments, and an administrative dashboard.",
+    "language": "JavaScript",
+    "isFeatured": true,
+    "webapp": true,
+    "terminal": false,
+    "desktopApp": false,
+    "repoLink": "#",
+    "demoLink": "#",
+    "date": "2023-11-20"
+  },
+  {
+    "title": "BattleShip Game",
+    "description": "A classic strategic board game reimagined with a custom graphical interface and advanced AI opponent logic.",
+    "language": "Java",
+    "isFeatured": true,
+    "webapp": false,
+    "terminal": false,
+    "desktopApp": true,
+    "repoLink": "#",
+    "demoLink": null,
+    "date": "2023-08-22"
+  },
+  {
+    "title": "Distributed Task Queue",
+    "description": "High-performance asynchronous job queue built with Node.js and Redis.",
+    "language": "JavaScript",
+    "isFeatured": false,
+    "webapp": true,
+    "terminal": false,
+    "desktopApp": false,
+    "repoLink": "#",
+    "demoLink": null,
+    "date": "2023-10-05"
+  },
+  {
+    "title": "Terminal Weather Fetcher",
+    "description": "Lightweight CLI utility for retrieving global weather forecasts.",
+    "language": "Python",
+    "isFeatured": false,
+    "webapp": false,
+    "terminal": true,
+    "desktopApp": false,
+    "repoLink": "#",
+    "demoLink": null,
+    "date": "2023-06-12"
+  }
+]
