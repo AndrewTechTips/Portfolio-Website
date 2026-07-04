@@ -97,6 +97,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const featuredSection = document.getElementById("featured-section");
     const otherSection = document.getElementById("other-section");
     const emptyState = document.getElementById("empty-state");
+    const showMoreBtn = document.getElementById("show-more-btn");
 
     const icons = {
         webapp: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg> Live Web Demo',
@@ -108,6 +109,15 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     let projectsData = [];
+    let isShowingAllOthers = false;
+
+    if (showMoreBtn) {
+        showMoreBtn.addEventListener('click', () => {
+            isShowingAllOthers = !isShowingAllOthers;
+            showMoreBtn.textContent = isShowingAllOthers ? 'Show Less' : 'Show More';
+            renderFilteredProjects();
+        });
+    }
 
     const buildCardHTML = (project) => {
         let typeBadgeHTML = '';
@@ -145,6 +155,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const query = searchInput.value.toLowerCase().trim();
         const selectedLang = languageSelect.value;
         const sortMethod = sortSelect.value;
+        const isFiltering = query !== '' || selectedLang !== 'all';
 
         let filtered = projectsData.filter(project => {
             const matchesSearch = project.title.toLowerCase().includes(query) || project.description.toLowerCase().includes(query);
@@ -165,25 +176,34 @@ document.addEventListener("DOMContentLoaded", () => {
             emptyState.style.display = 'flex';
             featuredSection.style.display = 'none';
             otherSection.style.display = 'none';
+            if (showMoreBtn) showMoreBtn.style.display = 'none';
         } else {
             emptyState.style.display = 'none';
 
-            let hasFeatured = false;
-            let hasOther = false;
+            const featuredList = filtered.filter(p => p.isFeatured);
+            const otherList = filtered.filter(p => !p.isFeatured);
 
-            filtered.forEach(project => {
-                const cardHTML = buildCardHTML(project);
-                if (project.isFeatured) {
-                    featuredProjectsContainer.insertAdjacentHTML('beforeend', cardHTML);
-                    hasFeatured = true;
-                } else {
-                    otherProjectsContainer.insertAdjacentHTML('beforeend', cardHTML);
-                    hasOther = true;
-                }
+            if (!isFiltering && otherList.length > 3) {
+                if (showMoreBtn) showMoreBtn.style.display = 'inline-flex';
+            } else {
+                if (showMoreBtn) showMoreBtn.style.display = 'none';
+            }
+
+            let displayOtherList = otherList;
+            if (!isFiltering && !isShowingAllOthers && otherList.length > 3) {
+                displayOtherList = otherList.slice(0, 3);
+            }
+
+            featuredList.forEach(project => {
+                featuredProjectsContainer.insertAdjacentHTML('beforeend', buildCardHTML(project));
             });
 
-            featuredSection.style.display = hasFeatured ? 'block' : 'none';
-            otherSection.style.display = hasOther ? 'block' : 'none';
+            displayOtherList.forEach(project => {
+                otherProjectsContainer.insertAdjacentHTML('beforeend', buildCardHTML(project));
+            });
+
+            featuredSection.style.display = featuredList.length > 0 ? 'block' : 'none';
+            otherSection.style.display = otherList.length > 0 ? 'block' : 'none';
 
             observeElements();
         }
