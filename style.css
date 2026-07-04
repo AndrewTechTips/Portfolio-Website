@@ -791,6 +791,14 @@ body {
 }
 
 @media (max-width: 768px) {
+    .card-actions {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    .card-action .btn-action {
+        width: 100%;
+        text-align: center;
+    }
     .container {
         padding: 0 1.5rem;
     }

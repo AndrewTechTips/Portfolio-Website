@@ -33,8 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 entry.target.classList.add("active");
-            } else {
-                entry.target.classList.remove("active");
+                scrollObserver.unobserve(entry.target);
             }
         });
     }, scrollObserverOptions);
@@ -134,7 +133,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         return `
-            <article class="card glass-panel reveal-element">
+            <article class="card glass-panel">
                 <div class="card-content-wrapper">
                     <div class="card-header">
                         <h4 class="card-title">${project.title}</h4>
