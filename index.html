@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,196 +7,258 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="dynamic-background"></div>
+<div class="ambient-background"></div>
 
-<nav class="nav-bar">
-    <div class="nav-container">
-        <div class="brand-logo">DevPortfolio</div>
-        <div class="nav-links">
-            <a href="#projects">Projects</a>
-            <a href="#contact">Contact</a>
-            <button id="theme-toggle" class="theme-btn" aria-label="Toggle Theme">
-                <i class="fas fa-moon"></i>
+<nav class="navigation-bar">
+    <div class="container nav-content">
+        <a href="#" class="brand-signature">DevPortfolio</a>
+        <div class="nav-menu">
+            <a href="#about" class="nav-item">About</a>
+            <a href="#projects" class="nav-item">Projects</a>
+            <a href="#contact" class="nav-item">Contact</a>
+            <button id="theme-switcher" class="action-btn theme-btn" aria-label="Toggle Theme">
+                <svg class="theme-icon-dark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
+                <svg class="theme-icon-light" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>
             </button>
         </div>
     </div>
 </nav>
 
-<main class="main-container">
+<main>
     <section class="hero-section">
-        <div class="hero-card glass-panel scroll-reveal">
-            <h1>Crafting scalable solutions and resilient architectures.</h1>
-            <p>Full-stack developer focused on building efficient, user-centric applications. Experienced in backend systems, modern web frameworks, and automated workflows.</p>
-            <div class="action-group">
-                <a href="#projects" class="btn btn-primary">View My Work</a>
-                <a href="#contact" class="btn btn-outline">Get in Touch</a>
+        <div class="container hero-container">
+            <div class="hero-content reveal-element">
+                <span class="eyebrow-text">Software Engineering & Design</span>
+                <h1 class="hero-title">Engineering robust digital experiences with purpose.</h1>
+                <p class="hero-subtitle">Focusing on resilient architectures, scalable systems, and seamless user interfaces to bridge the gap between complex logic and elegant design.</p>
+                <div class="action-group">
+                    <a href="#projects" class="btn btn-primary">Explore Work</a>
+                    <a href="#about" class="btn btn-secondary">Learn More</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="about" class="about-section">
+        <div class="container">
+            <div class="about-grid reveal-element">
+                <div class="about-text glass-panel">
+                    <h2 class="section-title">About Me</h2>
+                    <p>I am a Computer Science student and Software Developer based in Constanța, Romania. My focus lies in building scalable applications that solve real-world problems.</p>
+                    <p>With a strong foundation in modern web technologies and backend architecture, I continuously adapt to emerging industry standards. I believe in writing clean, maintainable code and designing intuitive interfaces that respect the user's time and attention.</p>
+
+                    <div class="social-links-inline">
+                        <a href="#" class="social-icon" aria-label="GitHub">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path><path d="M9 18c-4.51 2-5-2-7-2"></path></svg>
+                        </a>
+                        <a href="#" class="social-icon" aria-label="LinkedIn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect width="4" height="12" x="2" y="9"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+                        </a>
+                        <a href="#" class="social-icon" aria-label="Instagram">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg>
+                        </a>
+                    </div>
+                </div>
+                <div class="about-visual glass-panel">
+                    <div class="visual-placeholder"></div>
+                </div>
             </div>
         </div>
     </section>
 
     <section id="projects" class="projects-section">
-        <div class="section-header scroll-reveal">
-            <h2>Selected Projects</h2>
-        </div>
+        <div class="container">
+            <div class="projects-header reveal-element">
+                <h2 class="section-title">Selected Projects</h2>
 
-        <div class="controls-bar glass-panel scroll-reveal">
-            <div class="search-input-group">
-                <i class="fas fa-search"></i>
-                <input type="text" id="search-input" placeholder="Search projects by title...">
-            </div>
-            <div class="filter-group">
-                <select id="language-filter">
-                    <option value="all">All Languages</option>
-                    <option value="Python">Python</option>
-                    <option value="JavaScript">JavaScript</option>
-                    <option value="Java">Java</option>
-                </select>
-                <select id="date-sort">
-                    <option value="newest">Newest First</option>
-                    <option value="oldest">Oldest First</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="projects-wrapper">
-            <h3 class="category-title scroll-reveal">Featured Projects</h3>
-            <div class="projects-grid featured-grid" id="featured-grid">
-
-                <article class="project-card glass-panel featured-card scroll-reveal" data-title="Vault of Chances" data-language="Python" data-date="2024-02-15">
-                    <div class="card-content">
-                        <h3>Vault of Chances</h3>
-                        <p>A sophisticated data visualization dashboard tracking real-time statistical probabilities and market trends.</p>
-                        <div class="badge-group">
-                            <span class="badge"><i class="fas fa-globe"></i> Live Web Demo</span>
-                            <span class="badge"><i class="fab fa-python"></i> Python</span>
+                <div class="portfolio-controls glass-panel">
+                    <div class="search-box">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+                        <input type="text" id="project-search" placeholder="Search by title or keyword...">
+                    </div>
+                    <div class="filter-options">
+                        <div class="select-wrapper">
+                            <select id="project-language" aria-label="Filter by Language">
+                                <option value="all">All Languages</option>
+                                <option value="Python">Python</option>
+                                <option value="JavaScript">JavaScript</option>
+                                <option value="Java">Java</option>
+                            </select>
+                        </div>
+                        <div class="select-wrapper">
+                            <select id="project-sort" aria-label="Sort Projects">
+                                <option value="newest">Newest First</option>
+                                <option value="oldest">Oldest First</option>
+                            </select>
                         </div>
                     </div>
-                    <div class="card-footer">
-                        <a href="#" class="btn-icon"><i class="fab fa-github"></i> Source</a>
-                        <a href="#" class="btn-icon primary"><i class="fas fa-external-link-alt"></i> Demo</a>
-                    </div>
-                </article>
-
-                <article class="project-card glass-panel featured-card scroll-reveal" data-title="Thief Detection Notifier" data-language="Python" data-date="2024-01-10">
-                    <div class="card-content">
-                        <h3>Thief Detection Notifier</h3>
-                        <p>Security automation tool utilizing OpenCV for motion detection and AWS SNS for immediate SMS alerts.</p>
-                        <div class="badge-group">
-                            <span class="badge"><i class="fas fa-terminal"></i> Terminal</span>
-                            <span class="badge"><i class="fab fa-python"></i> Python</span>
-                        </div>
-                    </div>
-                    <div class="card-footer">
-                        <a href="#" class="btn-icon"><i class="fab fa-github"></i> Source</a>
-                    </div>
-                </article>
-
-                <article class="project-card glass-panel featured-card scroll-reveal" data-title="Hotel Booking Application" data-language="JavaScript" data-date="2023-11-20">
-                    <div class="card-content">
-                        <h3>Hotel Booking Application</h3>
-                        <p>Full-stack reservation platform featuring real-time availability, secure payments, and an administrative dashboard.</p>
-                        <div class="badge-group">
-                            <span class="badge"><i class="fas fa-globe"></i> Live Web Demo</span>
-                            <span class="badge"><i class="fab fa-js"></i> JavaScript</span>
-                        </div>
-                    </div>
-                    <div class="card-footer">
-                        <a href="#" class="btn-icon"><i class="fab fa-github"></i> Source</a>
-                        <a href="#" class="btn-icon primary"><i class="fas fa-external-link-alt"></i> Demo</a>
-                    </div>
-                </article>
-
-                <article class="project-card glass-panel featured-card scroll-reveal" data-title="BattleShip Game" data-language="Java" data-date="2023-08-22">
-                    <div class="card-content">
-                        <h3>BattleShip Game</h3>
-                        <p>A classic strategic board game reimagined with a custom graphical interface and advanced AI opponent logic.</p>
-                        <div class="badge-group">
-                            <span class="badge"><i class="fas fa-desktop"></i> Desktop App</span>
-                            <span class="badge"><i class="fab fa-java"></i> Java</span>
-                        </div>
-                    </div>
-                    <div class="card-footer">
-                        <a href="#" class="btn-icon"><i class="fab fa-github"></i> Source</a>
-                    </div>
-                </article>
-
+                </div>
             </div>
 
-            <h3 class="category-title scroll-reveal">Other Projects</h3>
-            <div class="projects-grid compact-grid" id="other-grid">
+            <div class="projects-container">
+                <div class="reveal-element">
+                    <h3 class="subsection-title">Featured Work</h3>
+                    <div class="grid-featured" id="featured-projects">
 
-                <article class="project-card glass-panel compact-card scroll-reveal" data-title="Distributed Task Queue" data-language="JavaScript" data-date="2023-10-05">
-                    <div class="card-content">
-                        <h4>Distributed Task Queue</h4>
-                        <p>High-performance asynchronous job queue built with Node.js and Redis.</p>
-                        <div class="badge-group">
-                            <span class="badge"><i class="fas fa-server"></i> Backend API</span>
-                            <span class="badge"><i class="fab fa-js"></i> JavaScript</span>
-                        </div>
-                    </div>
-                    <div class="card-footer">
-                        <a href="#" class="btn-icon"><i class="fab fa-github"></i> Source</a>
-                    </div>
-                </article>
+                        <article class="card glass-panel" data-title="Vault of Chances" data-language="Python" data-date="2024-02-15">
+                            <div class="card-body">
+                                <h4 class="card-title">Vault of Chances</h4>
+                                <p class="card-desc">A sophisticated data visualization dashboard tracking real-time statistical probabilities and market trends.</p>
+                                <div class="card-tags">
+                                    <span class="tag"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg> Live Web Demo</span>
+                                    <span class="tag">Python</span>
+                                </div>
+                            </div>
+                            <div class="card-actions">
+                                <a href="#" class="btn-action">Source Code</a>
+                                <a href="#" class="btn-action primary">View Demo</a>
+                            </div>
+                        </article>
 
-                <article class="project-card glass-panel compact-card scroll-reveal" data-title="Terminal Weather Fetcher" data-language="Python" data-date="2023-06-12">
-                    <div class="card-content">
-                        <h4>Terminal Weather Fetcher</h4>
-                        <p>Lightweight CLI utility for retrieving global weather forecasts.</p>
-                        <div class="badge-group">
-                            <span class="badge"><i class="fas fa-terminal"></i> Terminal</span>
-                            <span class="badge"><i class="fab fa-python"></i> Python</span>
-                        </div>
-                    </div>
-                    <div class="card-footer">
-                        <a href="#" class="btn-icon"><i class="fab fa-github"></i> Source</a>
-                    </div>
-                </article>
+                        <article class="card glass-panel" data-title="Thief Detection Notifier" data-language="Python" data-date="2024-01-10">
+                            <div class="card-body">
+                                <h4 class="card-title">Thief Detection Notifier</h4>
+                                <p class="card-desc">Security automation tool utilizing OpenCV for motion detection and AWS SNS for immediate SMS alerts.</p>
+                                <div class="card-tags">
+                                    <span class="tag"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" x2="20" y1="19" y2="19"></line></svg> Terminal</span>
+                                    <span class="tag">Python</span>
+                                </div>
+                            </div>
+                            <div class="card-actions">
+                                <a href="#" class="btn-action">Source Code</a>
+                            </div>
+                        </article>
 
+                        <article class="card glass-panel" data-title="Hotel Booking Application" data-language="JavaScript" data-date="2023-11-20">
+                            <div class="card-body">
+                                <h4 class="card-title">Hotel Booking Application</h4>
+                                <p class="card-desc">Full-stack reservation platform featuring real-time availability, secure payments, and an administrative dashboard.</p>
+                                <div class="card-tags">
+                                    <span class="tag"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg> Live Web Demo</span>
+                                    <span class="tag">JavaScript</span>
+                                </div>
+                            </div>
+                            <div class="card-actions">
+                                <a href="#" class="btn-action">Source Code</a>
+                                <a href="#" class="btn-action primary">View Demo</a>
+                            </div>
+                        </article>
+
+                        <article class="card glass-panel" data-title="BattleShip Game" data-language="Java" data-date="2023-08-22">
+                            <div class="card-body">
+                                <h4 class="card-title">BattleShip Game</h4>
+                                <p class="card-desc">A classic strategic board game reimagined with a custom graphical interface and advanced AI opponent logic.</p>
+                                <div class="card-tags">
+                                    <span class="tag"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="3" rx="2"></rect><line x1="8" x2="16" y1="21" y2="21"></line><line x1="12" x2="12" y1="17" y2="21"></line></svg> Desktop App</span>
+                                    <span class="tag">Java</span>
+                                </div>
+                            </div>
+                            <div class="card-actions">
+                                <a href="#" class="btn-action">Source Code</a>
+                            </div>
+                        </article>
+
+                    </div>
+                </div>
+
+                <div class="reveal-element">
+                    <h3 class="subsection-title">Other Projects</h3>
+                    <div class="grid-compact" id="other-projects">
+
+                        <article class="card glass-panel" data-title="Distributed Task Queue" data-language="JavaScript" data-date="2023-10-05">
+                            <div class="card-body">
+                                <h4 class="card-title">Distributed Task Queue</h4>
+                                <p class="card-desc">High-performance asynchronous job queue built with Node.js and Redis.</p>
+                                <div class="card-tags">
+                                    <span class="tag"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"></rect><rect width="20" height="8" x="2" y="14" rx="2" ry="2"></rect><line x1="6" x2="6.01" y1="6" y2="6"></line><line x1="6" x2="6.01" y1="18" y2="18"></line></svg> Backend API</span>
+                                    <span class="tag">JavaScript</span>
+                                </div>
+                            </div>
+                            <div class="card-actions">
+                                <a href="#" class="btn-action">Source Code</a>
+                            </div>
+                        </article>
+
+                        <article class="card glass-panel" data-title="Terminal Weather Fetcher" data-language="Python" data-date="2023-06-12">
+                            <div class="card-body">
+                                <h4 class="card-title">Terminal Weather Fetcher</h4>
+                                <p class="card-desc">Lightweight CLI utility for retrieving global weather forecasts.</p>
+                                <div class="card-tags">
+                                    <span class="tag"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" x2="20" y1="19" y2="19"></line></svg> Terminal</span>
+                                    <span class="tag">Python</span>
+                                </div>
+                            </div>
+                            <div class="card-actions">
+                                <a href="#" class="btn-action">Source Code</a>
+                            </div>
+                        </article>
+
+                    </div>
+                </div>
             </div>
         </div>
     </section>
 
     <section id="contact" class="contact-section">
-        <div class="contact-grid glass-panel scroll-reveal">
-            <div class="contact-details">
-                <h2>Let's Connect</h2>
-                <p>I am currently open to new opportunities. Whether you have a question or just want to say hi, I will try my best to get back to you.</p>
-                <div class="social-links">
-                    <a href="#" class="btn-social"><i class="fab fa-github"></i> GitHub</a>
-                    <a href="#" class="btn-social"><i class="fab fa-linkedin"></i> LinkedIn</a>
-                    <a href="mailto:your@email.com" class="btn-social"><i class="fas fa-envelope"></i> Email Direct</a>
-                </div>
-            </div>
-            <div class="contact-form-container">
-                <form action="https://formsubmit.co/your@email.com" method="POST" class="contact-form">
-                    <input type="hidden" name="_subject" value="New inquiry from portfolio!">
-                    <input type="hidden" name="_captcha" value="false">
+        <div class="container">
+            <div class="contact-layout glass-panel reveal-element">
+                <div class="contact-info">
+                    <h2 class="section-title">Let's Connect</h2>
+                    <p class="contact-desc">I am currently exploring new opportunities. Whether you have a question regarding my work or wish to discuss a potential role, I look forward to connecting.</p>
 
-                    <div class="input-group">
-                        <label for="email">Email Address</label>
-                        <input type="email" id="email" name="email" required placeholder="">
+                    <div class="contact-links">
+                        <a href="#" class="contact-card glass-panel">
+                            <div class="contact-card-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path><path d="M9 18c-4.51 2-5-2-7-2"></path></svg>
+                            </div>
+                            <span>github.com/developer</span>
+                        </a>
+                        <a href="#" class="contact-card glass-panel">
+                            <div class="contact-card-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect width="4" height="12" x="2" y="9"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+                            </div>
+                            <span>linkedin.com/in/developer</span>
+                        </a>
+                        <a href="mailto:your@email.com" class="contact-card glass-panel">
+                            <div class="contact-card-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>
+                            </div>
+                            <span>Direct Email</span>
+                        </a>
                     </div>
-                    <div class="input-group">
-                        <label for="message">Message</label>
-                        <textarea id="message" name="message" rows="5" required placeholder=""></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-primary btn-submit">
-                        <span>Send Message</span>
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
-                </form>
+                </div>
+
+                <div class="contact-form-wrapper">
+                    <form action="https://formsubmit.co/your@email.com" method="POST" class="submission-form">
+                        <input type="hidden" name="_subject" value="Portfolio Contact Form Inquiry">
+                        <input type="hidden" name="_captcha" value="false">
+
+                        <div class="form-field">
+                            <label for="sender-email">Email Address</label>
+                            <input type="email" id="sender-email" name="email" required placeholder="name@company.com">
+                        </div>
+                        <div class="form-field">
+                            <label for="sender-message">Message</label>
+                            <textarea id="sender-message" name="message" rows="5" required placeholder="How can we collaborate?"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary submit-action">
+                            <span>Send Message</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" x2="11" y1="2" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </section>
 </main>
 
 <footer class="site-footer">
-    <p>&copy; 2026 Developer Portfolio. Built with focus and precision.</p>
+    <div class="container">
+        <p>&copy; 2026 Developer Portfolio. Built with focus and precision.</p>
+    </div>
 </footer>
 
 <script src="script.js"></script>

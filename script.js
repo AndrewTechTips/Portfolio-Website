@@ -2,93 +2,76 @@
 
 document.addEventListener("DOMContentLoaded", () => {
 
-    const themeToggleBtn = document.getElementById("theme-toggle");
-    if (themeToggleBtn) {
-        const themeIcon = themeToggleBtn.querySelector("i");
+    const themeSwitcher = document.getElementById("theme-switcher");
+    const rootElement = document.documentElement;
 
-        const setDarkTheme = () => {
-            document.documentElement.setAttribute("data-theme", "dark");
-            localStorage.setItem("portfolio-theme", "dark");
-            if (themeIcon) themeIcon.className = "fas fa-sun";
-        };
+    const applyTheme = (themeName) => {
+        rootElement.setAttribute("data-theme", themeName);
+        localStorage.setItem("portfolio-theme", themeName);
+    };
 
-        const setLightTheme = () => {
-            document.documentElement.setAttribute("data-theme", "light");
-            localStorage.setItem("portfolio-theme", "light");
-            if (themeIcon) themeIcon.className = "fas fa-moon";
-        };
+    const determineInitialTheme = () => {
+        const savedTheme = localStorage.getItem("portfolio-theme");
+        if (savedTheme) {
+            applyTheme(savedTheme);
+        } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) {
+            applyTheme("light");
+        } else {
+            applyTheme("dark");
+        }
+    };
 
-        const initializeTheme = () => {
-            const savedTheme = localStorage.getItem("portfolio-theme");
-            if (savedTheme === "dark") {
-                setDarkTheme();
-            } else if (savedTheme === "light") {
-                setLightTheme();
-            } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
-                setDarkTheme();
-            } else {
-                setDarkTheme();
-            }
-        };
-
-        themeToggleBtn.addEventListener("click", () => {
-            if (document.documentElement.getAttribute("data-theme") === "light") {
-                setDarkTheme();
-            } else {
-                setLightTheme();
-            }
+    if (themeSwitcher) {
+        themeSwitcher.addEventListener("click", () => {
+            const currentTheme = rootElement.getAttribute("data-theme");
+            applyTheme(currentTheme === "light" ? "dark" : "light");
         });
-
-        initializeTheme();
     }
 
-    const scrollObserver = new IntersectionObserver((entries) => {
+    determineInitialTheme();
+
+    const scrollObserverOptions = {
+        root: null,
+        rootMargin: "0px 0px -80px 0px",
+        threshold: 0.1
+    };
+
+    const scrollObserver = new IntersectionObserver((entries, observer) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
-                entry.target.classList.add("is-visible");
-                scrollObserver.unobserve(entry.target);
+                entry.target.classList.add("active");
+                observer.unobserve(entry.target);
             }
         });
-    }, {
-        threshold: 0.1,
-        rootMargin: "0px 0px -50px 0px"
-    });
+    }, scrollObserverOptions);
 
-    document.querySelectorAll(".scroll-reveal").forEach(element => {
-        scrollObserver.observe(element);
-    });
+    const revealElements = document.querySelectorAll(".reveal-element");
+    revealElements.forEach(el => scrollObserver.observe(el));
 
-    const searchInput = document.getElementById("search-input");
-    const languageFilter = document.getElementById("language-filter");
-    const dateSort = document.getElementById("date-sort");
+    const searchInput = document.getElementById("project-search");
+    const languageSelect = document.getElementById("project-language");
+    const sortSelect = document.getElementById("project-sort");
 
-    const featuredGrid = document.getElementById("featured-grid");
-    const otherGrid = document.getElementById("other-grid");
+    const featuredProjectsContainer = document.getElementById("featured-projects");
+    const otherProjectsContainer = document.getElementById("other-projects");
 
-    if (searchInput && languageFilter && dateSort && featuredGrid && otherGrid) {
-        const featuredCards = Array.from(featuredGrid.querySelectorAll(".project-card"));
-        const otherCards = Array.from(otherGrid.querySelectorAll(".project-card"));
+    if (searchInput && languageSelect && sortSelect && featuredProjectsContainer && otherProjectsContainer) {
+
+        const featuredCards = Array.from(featuredProjectsContainer.querySelectorAll(".card"));
+        const otherCards = Array.from(otherProjectsContainer.querySelectorAll(".card"));
         const allCards = [...featuredCards, ...otherCards];
 
-        const sortCards = (cards, sortOrder) => {
-            return cards.sort((a, b) => {
-                const dateA = new Date(a.getAttribute("data-date") || 0).getTime();
-                const dateB = new Date(b.getAttribute("data-date") || 0).getTime();
-                return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
-            });
-        };
-
-        const handleFiltering = () => {
-            const searchTerm = searchInput.value?.toLowerCase().trim() || "";
-            const selectedLanguage = languageFilter.value || "all";
-            const sortOrder = dateSort.value || "newest";
+        const filterAndSortProjects = () => {
+            const query = searchInput.value.toLowerCase().trim();
+            const language = languageSelect.value;
+            const sortMethod = sortSelect.value;
 
             allCards.forEach(card => {
                 const title = card.getAttribute("data-title")?.toLowerCase() || "";
-                const language = card.getAttribute("data-language") || "";
+                const cardLang = card.getAttribute("data-language") || "";
 
-                const matchesSearch = title.includes(searchTerm);
-                const matchesLanguage = selectedLanguage === "all" || language === selectedLanguage;
+                const matchesSearch = title.includes(query);
+                const matchesLanguage = language === "all" || cardLang === language;
 
                 if (matchesSearch && matchesLanguage) {
                     card.style.display = "flex";
@@ -97,67 +80,27 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             });
 
-            const sortedFeatured = sortCards([...featuredCards], sortOrder);
+            const sortLogic = (a, b) => {
+                const dateA = new Date(a.getAttribute("data-date") || 0).getTime();
+                const dateB = new Date(b.getAttribute("data-date") || 0).getTime();
+                return sortMethod === "newest" ? dateB - dateA : dateA - dateB;
+            };
+
+            const sortedFeatured = [...featuredCards].sort(sortLogic);
             sortedFeatured.forEach((card, index) => {
                 card.style.order = index;
             });
 
-            const sortedOther = sortCards([...otherCards], sortOrder);
+            const sortedOther = [...otherCards].sort(sortLogic);
             sortedOther.forEach((card, index) => {
                 card.style.order = index;
             });
         };
 
-        searchInput.addEventListener("input", handleFiltering);
-        languageFilter.addEventListener("change", handleFiltering);
-        dateSort.addEventListener("change", handleFiltering);
+        searchInput.addEventListener("input", filterAndSortProjects);
+        languageSelect.addEventListener("change", filterAndSortProjects);
+        sortSelect.addEventListener("change", filterAndSortProjects);
 
-        handleFiltering();
+        filterAndSortProjects();
     }
-
-    const typeWriterEffect = (elementId, texts, speed = 70, pause = 1500) => {
-        const element = document.getElementById(elementId);
-        if (!element) return;
-
-        let textIndex = 0;
-        let charIndex = 0;
-        let isDeleting = false;
-
-        const type = () => {
-            const currentText = texts[textIndex];
-
-            if (isDeleting) {
-                element.setAttribute("placeholder", currentText.substring(0, charIndex - 1));
-                charIndex--;
-            } else {
-                element.setAttribute("placeholder", currentText.substring(0, charIndex + 1));
-                charIndex++;
-            }
-
-            let delay = speed;
-
-            if (isDeleting) {
-                delay /= 2;
-            }
-
-            if (!isDeleting && charIndex === currentText.length) {
-                delay = pause;
-                isDeleting = true;
-            } else if (isDeleting && charIndex === 0) {
-                isDeleting = false;
-                textIndex = (textIndex + 1) % texts.length;
-                delay = speed * 4;
-            }
-
-            setTimeout(type, delay);
-        };
-
-        setTimeout(type, speed * 4);
-    };
-
-    const emailPlaceholders = ["name@company.com", "hello@startup.io", "recruiter@agency.com"];
-    const messagePlaceholders = ["How can we work together?", "I have a project for you...", "Let's discuss an opportunity."];
-
-    typeWriterEffect("email", emailPlaceholders);
-    typeWriterEffect("message", messagePlaceholders);
 });
