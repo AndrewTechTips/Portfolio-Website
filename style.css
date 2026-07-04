@@ -772,7 +772,11 @@ body {
     }
 
     .about-visual {
-        display: none;
+        display: flex;
+        max-width: 300px;
+        margin: 0 auto;
+        aspect-ratio: 1/1;
+        border-radius: 16px;
     }
 
     .contact-layout {

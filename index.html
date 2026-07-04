@@ -62,8 +62,8 @@
                         </a>
                     </div>
                 </div>
-                <div class="about-visual glass-panel">
-                    <div class="visual-placeholder"></div>
+                <div class="about-visual glass-panel" style="padding: 0; overflow: hidden;">
+                    <img src="assets/profile.jpeg" alt="Condrea Andrei" style="width: 100%; height: 100%; object-fit: cover;">
                 </div>
             </div>
         </div>
@@ -86,6 +86,7 @@
                                 <option value="Python">Python</option>
                                 <option value="JavaScript">JavaScript</option>
                                 <option value="Java">Java</option>
+                                <option value="HTML/CSS">HTML/CSS</option>
                             </select>
                         </div>
                         <div class="select-wrapper">
@@ -151,7 +152,7 @@
                 </div>
 
                 <div class="contact-form-wrapper">
-                    <form action="https://formsubmit.co/condrea.andrey777@gmail.com" method="POST" class="submission-form">
+                    <form id="contact-form" action="https://formsubmit.co/ajax/condrea.andrey777@gmail.com" method="POST" class="submission-form">
                         <input type="hidden" name="_subject" value="Portfolio Contact Form Inquiry">
                         <input type="hidden" name="_captcha" value="false">
 
@@ -167,6 +168,7 @@
                             <span>Send Message</span>
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" x2="11" y1="2" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                         </button>
+                        <p id="form-status" style="display: none; margin-top: 1rem; font-size: 0.95rem; text-align: center;"></p>
                     </form>
                 </div>
             </div>
