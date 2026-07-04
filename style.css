@@ -6,10 +6,10 @@
     --text-secondary: #94a3b8;
     --nav-bg: rgba(3, 4, 7, 0.75);
 
-    --glass-bg: rgba(255, 255, 255, 0.025);
-    --glass-border: rgba(255, 255, 255, 0.06);
-    --glass-hover-bg: rgba(255, 255, 255, 0.04);
-    --glass-hover-border: rgba(255, 255, 255, 0.15);
+    --glass-bg: rgba(255, 255, 255, 0.02);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-hover-bg: rgba(255, 255, 255, 0.05);
+    --glass-hover-border: rgba(255, 255, 255, 0.2);
     --input-bg: rgba(0, 0, 0, 0.4);
 
     --accent-base: #60a5fa;
@@ -20,8 +20,9 @@
     --transition-smooth: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     --transition-bounce: 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 
-    --shadow-subtle: 0 4px 24px rgba(0, 0, 0, 0.2);
-    --shadow-glow: 0 8px 32px rgba(96, 165, 250, 0.15);
+    --shadow-subtle: 0 8px 32px rgba(0, 0, 0, 0.3);
+    --shadow-glow: 0 12px 40px rgba(96, 165, 250, 0.15);
+    --card-shadow-hover: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--glass-hover-border);
 }
 
 [data-theme="light"] {
@@ -30,16 +31,17 @@
     --bg-gradient-2: #e0e7ff;
     --text-primary: #0f172a;
     --text-secondary: #475569;
-    --nav-bg: rgba(248, 250, 252, 0.8);
+    --nav-bg: rgba(248, 250, 252, 0.85);
 
-    --glass-bg: rgba(255, 255, 255, 0.6);
-    --glass-border: rgba(15, 23, 42, 0.08);
-    --glass-hover-bg: rgba(255, 255, 255, 0.8);
-    --glass-hover-border: rgba(15, 23, 42, 0.18);
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(15, 23, 42, 0.1);
+    --glass-hover-bg: rgba(255, 255, 255, 0.95);
+    --glass-hover-border: rgba(15, 23, 42, 0.2);
     --input-bg: rgba(255, 255, 255, 0.8);
 
-    --shadow-subtle: 0 4px 24px rgba(15, 23, 42, 0.06);
-    --shadow-glow: 0 8px 32px rgba(96, 165, 250, 0.25);
+    --shadow-subtle: 0 8px 32px rgba(15, 23, 42, 0.04);
+    --shadow-glow: 0 12px 40px rgba(96, 165, 250, 0.2);
+    --card-shadow-hover: 0 20px 40px rgba(15, 23, 42, 0.08), 0 0 0 1px var(--glass-hover-border);
 }
 
 * {
@@ -59,6 +61,7 @@ body {
     line-height: 1.6;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
+    transition: background-color var(--transition-smooth), color var(--transition-smooth);
 }
 
 @keyframes gradient-pan {
@@ -96,7 +99,10 @@ body {
     border: 1px solid var(--glass-border);
     border-radius: 16px;
     box-shadow: var(--shadow-subtle);
-    transition: background var(--transition-smooth), border-color var(--transition-smooth), box-shadow var(--transition-smooth), transform var(--transition-smooth);
+    transition: background var(--transition-smooth),
+    border-color var(--transition-smooth),
+    box-shadow var(--transition-smooth),
+    transform var(--transition-smooth);
 }
 
 .navigation-bar {
@@ -313,7 +319,8 @@ body {
 .social-icon:hover {
     color: var(--accent-base);
     border-color: var(--accent-base);
-    transform: translateY(-3px);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-glow);
 }
 
 .about-visual {
@@ -357,12 +364,13 @@ body {
     padding: 0.75rem 1.25rem;
     flex: 1;
     max-width: 480px;
-    transition: border-color var(--transition-smooth), box-shadow var(--transition-smooth);
+    transition: border-color var(--transition-smooth), box-shadow var(--transition-smooth), background var(--transition-smooth);
 }
 
 .search-box:focus-within {
     border-color: var(--accent-base);
     box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.15);
+    background: var(--glass-bg);
 }
 
 .search-box svg {
@@ -410,6 +418,7 @@ body {
 .select-wrapper select:focus {
     border-color: var(--accent-base);
     box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.15);
+    background-color: var(--glass-bg);
 }
 
 .select-wrapper select option {
@@ -432,7 +441,7 @@ body {
 
 .grid-featured {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
     gap: 2.5rem;
 }
 
@@ -447,6 +456,20 @@ body {
     flex-direction: column;
     justify-content: space-between;
     padding: 2.5rem;
+    overflow: hidden;
+    position: relative;
+}
+
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%);
+    pointer-events: none;
+    border-radius: inherit;
 }
 
 .grid-compact .card {
@@ -454,9 +477,16 @@ body {
 }
 
 .card:hover {
-    transform: translateY(-8px);
+    transform: translateY(-8px) scale(1.01);
     border-color: var(--glass-hover-border);
     background: var(--glass-hover-bg);
+    box-shadow: var(--card-shadow-hover);
+}
+
+.card-content-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .card-title {
@@ -464,6 +494,7 @@ body {
     font-weight: 600;
     margin-bottom: 1rem;
     color: var(--text-primary);
+    letter-spacing: -0.01em;
 }
 
 .grid-compact .card-title {
@@ -482,6 +513,7 @@ body {
     flex-wrap: wrap;
     gap: 0.75rem;
     margin-bottom: 2.5rem;
+    margin-top: auto;
 }
 
 .tag {
@@ -491,16 +523,22 @@ body {
     font-size: 0.75rem;
     font-weight: 500;
     padding: 0.4rem 0.85rem;
-    border-radius: 999px;
+    border-radius: 6px;
     background: var(--input-bg);
     border: 1px solid var(--glass-border);
     color: var(--text-primary);
+}
+
+.lang-tag svg {
+    color: var(--accent-base);
 }
 
 .card-actions {
     display: flex;
     gap: 1rem;
     flex-wrap: wrap;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--glass-border);
 }
 
 .btn-action {
@@ -521,6 +559,7 @@ body {
 .btn-action:hover {
     background: var(--glass-hover-bg);
     border-color: var(--glass-hover-border);
+    transform: translateY(-2px);
 }
 
 .btn-action.primary {
@@ -531,7 +570,6 @@ body {
 
 .btn-action.primary:hover {
     background: var(--accent-gradient-hover);
-    transform: translateY(-2px);
 }
 
 .contact-section {
@@ -567,12 +605,14 @@ body {
     text-decoration: none;
     color: var(--text-primary);
     font-weight: 500;
+    border-radius: 12px;
 }
 
 .contact-card:hover {
     border-color: var(--glass-hover-border);
     background: var(--glass-hover-bg);
     transform: translateX(8px);
+    box-shadow: var(--shadow-subtle);
 }
 
 .contact-card-icon {
@@ -652,7 +692,7 @@ body {
 
 .reveal-element {
     opacity: 0;
-    transform: translateY(30px);
+    transform: translateY(40px);
     transition: opacity 0.8s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
     will-change: opacity, transform;
 }

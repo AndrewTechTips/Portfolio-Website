@@ -11,14 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const determineInitialTheme = () => {
-        const savedTheme = localStorage.getItem("portfolio-theme");
-        if (savedTheme) {
-            applyTheme(savedTheme);
-        } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) {
-            applyTheme("light");
-        } else {
-            applyTheme("dark");
-        }
+        applyTheme("dark");
     };
 
     if (themeSwitcher) {
@@ -32,21 +25,65 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const scrollObserverOptions = {
         root: null,
-        rootMargin: "0px 0px -80px 0px",
+        rootMargin: "0px 0px -50px 0px",
         threshold: 0.1
     };
 
-    const scrollObserver = new IntersectionObserver((entries, observer) => {
+    const scrollObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 entry.target.classList.add("active");
-                observer.unobserve(entry.target);
+            } else {
+                entry.target.classList.remove("active");
             }
         });
     }, scrollObserverOptions);
 
     const revealElements = document.querySelectorAll(".reveal-element");
     revealElements.forEach(el => scrollObserver.observe(el));
+
+    const typeWriterEffect = (elementId, texts, speed = 60, pause = 2000) => {
+        const element = document.getElementById(elementId);
+        if (!element) return;
+
+        let textIndex = 0;
+        let charIndex = 0;
+        let isDeleting = false;
+
+        const type = () => {
+            const currentText = texts[textIndex];
+
+            if (isDeleting) {
+                element.setAttribute("placeholder", currentText.substring(0, charIndex - 1));
+                charIndex--;
+            } else {
+                element.setAttribute("placeholder", currentText.substring(0, charIndex + 1));
+                charIndex++;
+            }
+
+            let delay = speed;
+
+            if (isDeleting) {
+                delay /= 2;
+            }
+
+            if (!isDeleting && charIndex === currentText.length) {
+                delay = pause;
+                isDeleting = true;
+            } else if (isDeleting && charIndex === 0) {
+                isDeleting = false;
+                textIndex = (textIndex + 1) % texts.length;
+                delay = speed * 3;
+            }
+
+            setTimeout(type, delay);
+        };
+
+        setTimeout(type, speed * 3);
+    };
+
+    typeWriterEffect("sender-email", ["name@company.com", "hello@startup.io", "recruiter@agency.com"]);
+    typeWriterEffect("sender-message", ["How can we collaborate?", "I have a role for you...", "Let's build something."]);
 
     const searchInput = document.getElementById("project-search");
     const languageSelect = document.getElementById("project-language");
