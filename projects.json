@@ -310,5 +310,17 @@
     "repoLink": "https://github.com/AndrewTechTips/Etch-a-Sketch",
     "demoLink": "https://andrewtechtips.github.io/Etch-a-Sketch/",
     "date": "2024-11-20"
+  },
+  {
+    "title": "Web Automation Engine",
+    "description": "A sophisticated desktop automation tool driving browser interactions via a custom Tkinter GUI. It leverages Selenium with explicit waits and background threading to ensure responsive, non-blocking automation for login, form submission, and file processing tasks.",
+    "language": "Python",
+    "isFeatured": true,
+    "webapp": false,
+    "terminal": false,
+    "desktopApp": true,
+    "repoLink": "https://github.com/AndrewTechTips/Browser-Automation",
+    "demoLink": null,
+    "date": "2026-07-05"
   }
 ]
