@@ -60,6 +60,18 @@
     "date": "2026-05-10"
   },
   {
+    "title": "Django Job Application Portal",
+    "description": "A modern web application for managing career opportunities and processing applications. Built with Django, featuring automated email confirmations, an admin dashboard with CSV exports, and a secure SQLite backend.",
+    "language": "Python",
+    "isFeatured": true,
+    "webapp": true,
+    "terminal": false,
+    "desktopApp": false,
+    "repoLink": "https://github.com/AndrewTechTips/Django-Form",
+    "demoLink": null,
+    "date": "2026-07-09"
+  },
+  {
     "title": "ODE Solver",
     "description": "A visual solver for Ordinary Differential Equations integrating SymPy for symbolic exact solutions and Plotly for frame-by-frame animations. It implements Euler, Heun, and RK4 numerical methods within a modern Streamlit interface.",
     "language": "Python",
@@ -322,5 +334,17 @@
     "repoLink": "https://github.com/AndrewTechTips/Browser-Automation",
     "demoLink": null,
     "date": "2026-07-05"
+  },
+  {
+    "title": "Flask Job Application Form",
+    "description": "A modern web application for collecting and managing job applications. Built with Flask and SQLAlchemy, featuring backend validation, automated email notifications, and a polished dark UI.",
+    "language": "Python",
+    "isFeatured": false,
+    "webapp": true,
+    "terminal": false,
+    "desktopApp": false,
+    "repoLink": "https://github.com/AndrewTechTips/Flask-Form",
+    "demoLink": null,
+    "date": "2026-07-09"
   }
 ]
