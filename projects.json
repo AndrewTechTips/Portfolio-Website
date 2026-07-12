@@ -346,5 +346,17 @@
     "repoLink": "https://github.com/AndrewTechTips/Flask-Form",
     "demoLink": null,
     "date": "2026-07-09"
+  },
+  {
+    "title": "Django Restaurant Menu & Digital Ordering",
+    "description": "A sophisticated web application for modern dining, featuring session-based cart management, automated QR code generation, and a high-performance Django admin dashboard for real-time inventory control.",
+    "language": "Python",
+    "isFeatured": true,
+    "webapp": true,
+    "terminal": false,
+    "desktopApp": false,
+    "repoLink": "https://github.com/AndrewTechTips/Django-Restaurant-Menu",
+    "demoLink": null,
+    "date": "2026-07-12"
   }
 ]
