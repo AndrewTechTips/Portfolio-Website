@@ -1,190 +1,273 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Condrea Andrei's Portfolio</title>
-    <link rel="icon" type="image/svg+xml" href="https://api.iconify.design/lucide:layers.svg?color=%2360a5fa">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<title>Andrei Condrea — Software Engineer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Defense in depth: even if a future bug reintroduced an injection point, the browser
+     itself refuses to run any script that isn't same-origin, so the blast radius stays
+     contained. GLTFLoader decodes the model's embedded texture via ImageBitmapLoader, which
+     fetch()es a blob: URL it creates internally (not a third-party resource, just how the
+     browser hands image bytes to the decoder) — that fetch falls under connect-src, not
+     img-src, so blob: has to be allowed in BOTH (img-src covers the <img>-tag fallback path
+     older Safari/Firefox use instead of ImageBitmapLoader). connect-src/form-action allow
+     formsubmit.co since that's the actual contact-form backend. -->
+<!-- The importmap script is inline (browsers require import maps to be inline or same-doc),
+     so 'self' alone doesn't cover it — a CSP hash allowlists this exact inline block by
+     content, without falling back to 'unsafe-inline' (which would allow ANY inline script,
+     defeating the point of having a script-src at all). If the import map's contents ever
+     change, this hash must be recomputed or the map silently stops being honored — see the
+     comment above the importmap script below. 'wasm-unsafe-eval' is required because the
+     meshopt decoder (used to decompress the 3D model) instantiates a WebAssembly module —
+     CSP treats WASM compilation like eval() by default. This keyword permits ONLY that,
+     not string-based eval()/Function(), so it doesn't reopen the door XSS would need. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'sha256-4y0yFOGoUDp37aLMhv4c6WGO90NUjOlQReIwSxXh73U='; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' blob:; connect-src 'self' blob: https://formsubmit.co; form-action https://formsubmit.co; object-src 'none'; base-uri 'self';">
+<meta name="description" content="Andrei Condrea — full-stack developer based in Constanța, Romania. FastAPI and Django on the backend, JavaScript on the frontend. Portfolio of backend, API, and web projects.">
+<link rel="canonical" href="https://andrewtechtips.github.io/Portfolio-Website/">
+
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://andrewtechtips.github.io/Portfolio-Website/">
+<meta property="og:title" content="Andrei Condrea — Software Engineer">
+<meta property="og:description" content="Full-stack developer based in Constanța, Romania. FastAPI and Django on the backend, JavaScript on the frontend.">
+<meta property="og:image" content="https://andrewtechtips.github.io/Portfolio-Website/assets/profile.jpeg">
+<meta property="og:locale" content="en_US">
+
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Andrei Condrea — Software Engineer">
+<meta name="twitter:description" content="Full-stack developer based in Constanța, Romania. FastAPI and Django on the backend, JavaScript on the frontend.">
+<meta name="twitter:image" content="https://andrewtechtips.github.io/Portfolio-Website/assets/profile.jpeg">
+
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="assets/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Person",
+      "name": "Andrei Condrea",
+      "url": "https://andrewtechtips.github.io/Portfolio-Website/",
+      "image": "https://andrewtechtips.github.io/Portfolio-Website/assets/profile.jpeg",
+      "jobTitle": "Software Engineer",
+      "description": "Full-stack developer based in Constanța, Romania, working with FastAPI, Django, and JavaScript.",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Constanța",
+        "addressCountry": "RO"
+      },
+      "sameAs": [
+        "https://github.com/AndrewTechTips",
+        "https://linkedin.com/in/andrei-condrea-b32148346",
+        "https://www.instagram.com/andrew_er_?igsh=MzlpZHNzMm90eW0z"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "name": "Andrei Condrea — Software Engineer",
+      "url": "https://andrewtechtips.github.io/Portfolio-Website/"
+    }
+  ]
+}
+</script>
+
+<link rel="stylesheet" href="style.css">
+<!-- If you edit the JSON below (even whitespace), the Content-Security-Policy meta tag's
+     script-src hash for this exact inline block will no longer match, and the browser will
+     silently refuse to honor this import map — every "three" import in main.js will then
+     fail with "Failed to resolve module specifier". Recompute the sha256- hash and update the
+     CSP meta tag above whenever this block changes. -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three/build/three.module.min.js",
+    "three/examples/jsm/loaders/GLTFLoader.js": "./vendor/three/examples/jsm/loaders/GLTFLoader.js",
+    "three/examples/jsm/libs/meshopt_decoder.module.js": "./vendor/three/examples/jsm/libs/meshopt_decoder.module.js"
+  }
+}
+</script>
 </head>
 <body>
-<div class="ambient-background"></div>
 
-<nav class="navigation-bar">
-    <div class="container nav-content">
-        <a href="#" class="brand-signature">Portfolio</a>
-        <div class="nav-menu">
-            <a href="#about" class="nav-item">About</a>
-            <a href="#projects" class="nav-item">Projects</a>
-            <a href="#contact" class="nav-item">Contact</a>
-            <button id="theme-switcher" class="action-btn theme-btn" aria-label="Toggle Theme">
-                <svg class="theme-icon-dark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
-                <svg class="theme-icon-light" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>
-            </button>
-        </div>
+<a href="#work" class="skip-link nav-link" data-target-fraction="1.05">Skip to main content</a>
+
+<div class="cursor-inner"></div>
+<div class="cursor-outer"></div>
+
+<div class="cinematic-container">
+  <div class="main-header">
+    <div class="brand">Andrei Condrea</div>
+    <nav class="header-nav">
+      <a href="#slide-1" class="nav-link" data-target-fraction="0">About</a>
+      <span class="nav-dot"></span>
+      <a href="#slide-2" class="nav-link" data-target-fraction="0.34">Backend</a>
+      <span class="nav-dot"></span>
+      <a href="#slide-3" class="nav-link" data-target-fraction="0.62">Frontend</a>
+      <span class="nav-dot"></span>
+      <a href="#slide-4" class="nav-link" data-target-fraction="0.80">Connect</a>
+      <span class="nav-dot"></span>
+      <a href="#work" class="nav-link" data-target-fraction="1.05">Work</a>
+    </nav>
+    <div class="header-actions">
+      <div class="header-social">
+        <a href="https://github.com/AndrewTechTips" class="social-icon" aria-label="GitHub" target="_blank" rel="noopener">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path><path d="M9 18c-4.51 2-5-2-7-2"></path></svg>
+        </a>
+        <a href="https://linkedin.com/in/andrei-condrea-b32148346" class="social-icon" aria-label="LinkedIn" target="_blank" rel="noopener">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect width="4" height="12" x="2" y="9"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+        </a>
+        <a href="https://www.instagram.com/andrew_er_?igsh=MzlpZHNzMm90eW0z" class="social-icon" aria-label="Instagram" target="_blank" rel="noopener">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg>
+        </a>
+      </div>
+      <a href="#" class="contact-btn" id="contact-btn">Contact <span class="btn-circle"></span></a>
+      <button type="button" class="menu-toggle" id="menu-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu-panel">
+        <span class="menu-toggle-bar"></span>
+        <span class="menu-toggle-bar"></span>
+        <span class="menu-toggle-bar"></span>
+      </button>
     </div>
-</nav>
+  </div>
 
-<main>
-    <section class="hero-section">
-        <div class="container hero-container">
-            <div class="hero-content reveal-element">
-                <span class="eyebrow-text">Condrea Andrei — Full Stack Developer.</span>
-                <h1 class="hero-title">Engineering robust digital experiences with purpose.</h1>
-                <p class="hero-subtitle">Focusing on resilient architectures, scalable systems, and seamless user interfaces to bridge the gap between complex logic and elegant design.</p>
-                <div class="action-group">
-                    <a href="#projects" class="btn btn-primary">Explore Work</a>
-                    <a href="#about" class="btn btn-secondary">Get in Touch</a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section id="about" class="about-section">
-        <div class="container">
-            <div class="about-grid reveal-element">
-                <div class="about-text glass-panel">
-                    <h2 class="section-title">About Me</h2>
-                    <p>I am Condrea Andrei, a Computer Science student and Full Stack Developer based in Constanța, Romania. My focus lies in building scalable applications that solve real-world problems.</p>
-                    <p>With a deep interest in robust backend architecture, APIs, and modern frontend design, I continuously adapt to emerging industry standards. I believe in writing clean, maintainable code and developing secure, high-performance systems that drive intuitive experiences.</p>
-
-                    <div class="social-links-inline">
-                        <a href="https://github.com/AndrewTechTips" class="social-icon" aria-label="GitHub" target="_blank">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path><path d="M9 18c-4.51 2-5-2-7-2"></path></svg>
-                        </a>
-                        <a href="https://linkedin.com/in/andrei-condrea-b32148346" class="social-icon" aria-label="LinkedIn" target="_blank">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect width="4" height="12" x="2" y="9"></rect><circle cx="4" cy="4" r="2"></circle></svg>
-                        </a>
-                        <a href="https://www.instagram.com/andrew_er_?igsh=MzlpZHNzMm90eW0z" class="social-icon" aria-label="Instagram" target="_blank">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg>
-                        </a>
-                    </div>
-                </div>
-                <div class="about-visual glass-panel" style="padding: 0; overflow: hidden;">
-                    <img src="assets/profile.jpeg" alt="Condrea Andrei" style="width: 100%; height: 100%; object-fit: cover;">
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section id="projects" class="projects-section">
-        <div class="container">
-            <div class="projects-header reveal-element">
-                <h2 class="section-title">Selected Projects</h2>
-
-                <div class="portfolio-controls glass-panel">
-                    <div class="search-box">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
-                        <input type="text" id="project-search" placeholder="Search by title or keyword...">
-                    </div>
-                    <div class="filter-options">
-                        <div class="select-wrapper">
-                            <select id="project-language" aria-label="Filter by Language">
-                                <option value="all">All Languages</option>
-                                <option value="Python">Python</option>
-                                <option value="JavaScript">JavaScript</option>
-                                <option value="Java">Java</option>
-                                <option value="HTML/CSS">HTML/CSS</option>
-                            </select>
-                        </div>
-                        <div class="select-wrapper">
-                            <select id="project-sort" aria-label="Sort Projects">
-                                <option value="newest">Newest First</option>
-                                <option value="oldest">Oldest First</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="projects-container">
-                <div id="empty-state" class="empty-state glass-panel" style="display: none;">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                    <h3>No projects found</h3>
-                    <p>We couldn't find any projects matching your search criteria. Please try a different keyword or filter.</p>
-                </div>
-
-                <div id="featured-section" class="reveal-element">
-                    <h3 class="subsection-title">Featured Work</h3>
-                    <div class="grid-featured" id="featured-projects-grid"></div>
-                </div>
-
-                <div id="other-section" class="reveal-element">
-                    <h3 class="subsection-title">Other Projects</h3>
-                    <div class="grid-compact" id="other-projects-grid"></div>
-                    <div class="show-more-wrapper">
-                        <button id="show-more-btn" class="btn btn-secondary" style="display: none;">Show More</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section id="contact" class="contact-section">
-        <div class="container">
-            <div class="contact-layout glass-panel reveal-element">
-                <div class="contact-info">
-                    <h2 class="section-title">Let's Connect</h2>
-                    <p class="contact-desc">I am currently exploring new opportunities. Whether you have a question regarding my work or wish to discuss a potential role, I look forward to connecting.</p>
-
-                    <div class="contact-links">
-                        <a href="https://github.com/AndrewTechTips" class="contact-card glass-panel">
-                            <div class="contact-card-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path><path d="M9 18c-4.51 2-5-2-7-2"></path></svg>
-                            </div>
-                            <span>github.com/AndrewTechTips</span>
-                        </a>
-                        <a href="https://linkedin.com/in/andrei-condrea-b32148346" class="contact-card glass-panel" target="_blank">
-                            <div class="contact-card-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect width="4" height="12" x="2" y="9"></rect><circle cx="4" cy="4" r="2"></circle></svg>
-                            </div>
-                            <span>linkedin.com/in/andrei-condrea</span>
-                        </a>
-                        <a href="mailto:condrea.andrey777@gmail.com" class="contact-card glass-panel">
-                            <div class="contact-card-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>
-                            </div>
-                            <span>Direct Email</span>
-                        </a>
-                    </div>
-                </div>
-
-                <div class="contact-form-wrapper">
-                    <form id="contact-form" action="https://formsubmit.co/ajax/condrea.andrey777@gmail.com" method="POST" class="submission-form">
-                        <input type="hidden" name="_subject" value="Portfolio Contact Form Inquiry">
-                        <input type="hidden" name="_captcha" value="false">
-
-                        <div class="form-field">
-                            <label for="sender-email">Email Address</label>
-                            <input type="email" id="sender-email" name="email" required placeholder="">
-                        </div>
-                        <div class="form-field">
-                            <label for="sender-message">Message</label>
-                            <textarea id="sender-message" name="message" rows="5" required placeholder=""></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary submit-action">
-                            <span>Send Message</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" x2="11" y1="2" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                        </button>
-                        <div id="form-status" class="form-status-message" style="display: none;">
-                            <span id="form-status-icon" class="status-icon"></span>
-                            <span id="form-status-text"></span>
-                        </div>                    </form>
-                </div>
-            </div>
-        </div>
-    </section>
-</main>
-
-<footer class="site-footer">
-    <div class="container">
-        <p>&copy; 2026 Condrea Andrei. Built with focus and precision.</p>
+  <div class="slide" id="slide-1">
+    <h2 class="slide-title">Full-Stack <br>Developer</h2>
+    <div class="desc-row">
+      <p class="slide-desc col-1">Computer Science student and full-stack developer based in Constanța, Romania. I build software that solves real problems, not portfolio filler.</p>
+      <p class="slide-desc col-2">FastAPI and Django on the backend, JavaScript on the front end. I care more about code that works under real usage than about buzzwords.</p>
     </div>
-</footer>
+  </div>
+  <div class="slide-image-mask" id="slide-2-img">
+    <picture>
+      <source srcset="assets/profile.avif" type="image/avif">
+      <source srcset="assets/profile.webp" type="image/webp">
+      <img src="assets/profile.jpeg" alt="Andrei Condrea">
+    </picture>
+  </div>
+  <div class="slide" id="slide-2">
+    <h2 class="slide-title">Backend <br>&amp; APIs</h2>
+    <p class="slide-desc">Most of my time goes into backend architecture — REST APIs, databases, and the parts of an app that have to hold up under real traffic. FastAPI is my go-to these days, with Django still in the mix for projects that need its admin and ORM out of the box.</p>
+  </div>
+  <div class="slide" id="slide-3">
+    <h2 class="slide-title">Frontend</h2>
+    <p class="slide-desc">On the front end I build interfaces that are fast and easy to use, not just easy to look at. Clean state, no unnecessary dependencies.</p>
+  </div>
+  <div class="slide" id="slide-4">
+    <h2 class="slide-title">Open <br>to Work</h2>
+    <p class="slide-desc">I'm currently looking for new opportunities in software engineering. If you have a role or a project worth building, reach out below.</p>
+  </div>
+</div>
 
-<script src="script.js"></script>
+<!-- Direct children of body (not nested in .cinematic-container) so they always render above
+     the project section on scroll, regardless of that container's own stacking context. -->
+<div class="mobile-menu-backdrop" id="mobile-menu-backdrop"></div>
+<div class="mobile-menu-panel" id="mobile-menu-panel" role="dialog" aria-modal="true" aria-label="Site navigation">
+  <nav class="mobile-menu-links">
+    <a href="#slide-1" class="nav-link mobile-menu-link" data-target-fraction="0"><span class="mobile-menu-label">About</span><span class="mobile-menu-arrow" aria-hidden="true">&#8594;</span></a>
+    <a href="#slide-2" class="nav-link mobile-menu-link" data-target-fraction="0.34"><span class="mobile-menu-label">Backend</span><span class="mobile-menu-arrow" aria-hidden="true">&#8594;</span></a>
+    <a href="#slide-3" class="nav-link mobile-menu-link" data-target-fraction="0.62"><span class="mobile-menu-label">Frontend</span><span class="mobile-menu-arrow" aria-hidden="true">&#8594;</span></a>
+    <a href="#slide-4" class="nav-link mobile-menu-link" data-target-fraction="0.80"><span class="mobile-menu-label">Connect</span><span class="mobile-menu-arrow" aria-hidden="true">&#8594;</span></a>
+    <a href="#work" class="nav-link mobile-menu-link" data-target-fraction="1.05"><span class="mobile-menu-label">Work</span><span class="mobile-menu-arrow" aria-hidden="true">&#8594;</span></a>
+  </nav>
+  <div class="mobile-menu-social">
+    <a href="https://github.com/AndrewTechTips" class="social-icon" aria-label="GitHub" target="_blank" rel="noopener">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path><path d="M9 18c-4.51 2-5-2-7-2"></path></svg>
+    </a>
+    <a href="https://linkedin.com/in/andrei-condrea-b32148346" class="social-icon" aria-label="LinkedIn" target="_blank" rel="noopener">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect width="4" height="12" x="2" y="9"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+    </a>
+    <a href="https://www.instagram.com/andrew_er_?igsh=MzlpZHNzMm90eW0z" class="social-icon" aria-label="Instagram" target="_blank" rel="noopener">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg>
+    </a>
+  </div>
+</div>
+
+<div class="grid-horizontal-line"></div>
+<div class="grid-lines">
+  <div class="grid-line"><div class="grid-dot top"></div><div class="grid-dot bottom"></div></div>
+  <div class="grid-line"><div class="grid-dot top"></div><div class="grid-dot bottom"></div></div>
+  <div class="grid-line"><div class="grid-dot top"></div><div class="grid-dot bottom"></div></div>
+  <div class="grid-line"><div class="grid-dot top"></div><div class="grid-dot bottom"></div></div>
+  <div class="grid-line story-progress-container">
+    <div class="grid-dot top"></div>
+    <div class="grid-dot bottom"></div>
+    <div class="story-dashes">
+      <div class="story-dash"><div class="story-dash-fill" id="dash-fill-1"></div></div>
+      <div class="story-dash"><div class="story-dash-fill" id="dash-fill-2"></div></div>
+      <div class="story-dash"><div class="story-dash-fill" id="dash-fill-3"></div></div>
+      <div class="story-dash"><div class="story-dash-fill" id="dash-fill-4"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="reveal-tint"></div>
+
+<canvas id="webgl"></canvas>
+
+<div class="model-loader" id="model-loader" role="status" aria-live="polite">
+  <div class="model-loader-ring"></div>
+  <div class="model-loader-label" id="model-loader-label">Loading scene&hellip;</div>
+</div>
+
+<div class="hero-scroll-spacer"></div>
+
+<section class="project-section" id="work">
+  <div class="project-section-header">
+    <h2 class="project-section-title">Selected Work</h2>
+    <p class="project-section-subtitle">A collection of things I've built.</p>
+  </div>
+  <div class="project-filter-bar" id="project-filter-bar"><!-- populated from PROJECTS via JS --></div>
+
+  <div class="project-featured-section" id="featured-section">
+    <h3 class="project-subsection-title">Featured Work</h3>
+    <div class="project-grid project-grid-featured" id="featured-project-grid"><!-- populated from PROJECTS via JS --></div>
+  </div>
+
+  <div class="project-other-section" id="other-section">
+    <h3 class="project-subsection-title">Other Projects</h3>
+    <div class="project-grid" id="other-project-grid"><!-- populated from PROJECTS via JS --></div>
+    <div class="show-more-wrapper" id="show-more-wrapper">
+      <button type="button" class="project-btn project-btn-outline" id="show-more-btn">
+        <span id="show-more-label">Show More</span> <span class="btn-circle"></span>
+      </button>
+    </div>
+  </div>
+
+  <div class="project-empty-state" id="project-empty-state">
+    <h3>No projects found</h3>
+    <p>Try a different filter.</p>
+  </div>
+</section>
+
+<div class="modal-overlay" id="contact-modal-overlay">
+  <div class="contact-modal glass-panel" role="dialog" aria-modal="true" aria-labelledby="contact-modal-title">
+    <button type="button" class="modal-close" id="contact-modal-close" aria-label="Close">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+    <h3 class="modal-title" id="contact-modal-title">Let's Connect</h3>
+    <p class="modal-subtitle">Have a role or a project in mind? Send a message below.</p>
+    <form id="contact-form" action="https://formsubmit.co/ajax/condrea.andrey777@gmail.com" method="POST" class="contact-form">
+      <input type="hidden" name="_subject" value="Portfolio Contact Form Inquiry">
+      <input type="hidden" name="_captcha" value="false">
+      <input type="text" name="_honey" class="honeypot-field" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <div class="form-field">
+        <label for="sender-email">Email Address</label>
+        <input type="email" id="sender-email" name="email" required placeholder="you@company.com">
+      </div>
+      <div class="form-field">
+        <label for="sender-message">Message</label>
+        <textarea id="sender-message" name="message" rows="5" required placeholder="How can we work together?"></textarea>
+      </div>
+      <button type="submit" class="project-btn contact-submit-btn">
+        <span>Send Message</span>
+      </button>
+      <div id="form-status" class="form-status-message" role="status" aria-live="polite"></div>
+    </form>
+  </div>
+</div>
+
+<script type="module" src="main.js"></script>
 </body>
 </html>
