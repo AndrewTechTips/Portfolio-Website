@@ -842,7 +842,11 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
     .header-social { display: none; }
     .menu-toggle { display: flex; }
 
-    #slide-2-img { width: calc(100vw - 48px); left: 24px; top: 80px; }
+    /* Capped instead of scaling to full viewport width — on wide phones (large "Ultra"-class
+       screens) a 1:1 square at near-full width grows tall enough to intrude into slide-2's own
+       text block below it, which is independently anchored to bottom:12% of the viewport and
+       has no awareness of a fixed-position element's height above it. */
+    #slide-2-img { width: min(calc(100vw - 48px), 200px); left: 24px; top: 80px; }
 }
 
 /* modal fits narrow viewports */

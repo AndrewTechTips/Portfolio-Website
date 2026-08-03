@@ -41,7 +41,16 @@ const QUALITY = {
     // edge started sliding into view (normal document flow, right after the spacer) almost
     // the instant slide 4 appeared, chopping off still fully-opaque text before it could be
     // read. 8 pushes that crossover point comfortably past slide 4's readable dwell window.
-    heroVhMultiplier: isMobile ? 8 : 9
+    heroVhMultiplier: isMobile ? 8 : 9,
+    // Touch scrolling delivers one continuous, high-velocity, inertia-driven gesture rather
+    // than the many small wheel ticks these were tuned against — at the desktop lerp speed the
+    // camera/blur/text state trails far enough behind a mobile flick that it visibly keeps
+    // "catching up" for a second or more after the finger lifts and the page has already
+    // stopped moving, reading as content abruptly refreshing/popping into place. Faster lerp on
+    // mobile keeps the visual state tied much more closely to the real, already-settled scroll
+    // position.
+    scrollLerpSpeed: isMobile ? 0.09 : 0.025,
+    revealLerpSpeed: isMobile ? 0.12 : 0.04
 };
 
 // ---- Scroll model constants ----
@@ -436,7 +445,7 @@ function initScene() {
     loadModel();
 }
 
-function onWindowResize() {
+function onWindowResize({ recalcHeroLength = true } = {}) {
     sizes.width = window.innerWidth;
     sizes.height = window.innerHeight;
     if (camera) {
@@ -449,8 +458,16 @@ function onWindowResize() {
     }
     if (shaderUniforms) shaderUniforms.uResolution.value.set(sizes.width, sizes.height);
 
-    heroScrollLength = window.innerHeight * QUALITY.heroVhMultiplier;
-    document.documentElement.style.setProperty('--hero-scroll-vh', `${heroScrollLength}px`);
+    // Only recompute the hero's scroll distance (8-9 viewport-heights tall) on a real layout
+    // change — orientation flip, actual window resize — never on a mobile browser's
+    // address-bar show/hide, which fires plain 'resize' events with the same width but a
+    // different innerHeight while the user is mid-scroll. Recalculating this spacer's height
+    // under the user's feet mid-gesture rewrote the document's scrollable length while they
+    // were actively scrolling through it, producing a visible jump/flash partway through.
+    if (recalcHeroLength) {
+        heroScrollLength = window.innerHeight * QUALITY.heroVhMultiplier;
+        document.documentElement.style.setProperty('--hero-scroll-vh', `${heroScrollLength}px`);
+    }
 
     // Real measured header height (not a guessed constant) so the mobile menu panel always
     // sits flush below it, whatever font-loading/content differences shift its actual size.
@@ -461,11 +478,19 @@ function onWindowResize() {
 }
 
 let resizeTimeout;
+let lastResizeWidth = window.innerWidth;
 window.addEventListener('resize', () => {
     clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(onWindowResize, 120);
+    resizeTimeout = setTimeout(() => {
+        const widthChanged = window.innerWidth !== lastResizeWidth;
+        lastResizeWidth = window.innerWidth;
+        onWindowResize({ recalcHeroLength: widthChanged });
+    }, 120);
 });
-window.addEventListener('orientationchange', onWindowResize);
+window.addEventListener('orientationchange', () => {
+    lastResizeWidth = window.innerWidth;
+    onWindowResize({ recalcHeroLength: true });
+});
 
 // ---- Pointer handling — fine-pointer only ----
 // `(pointer: fine)` is supposed to be false on phones, but plenty of real devices get this
@@ -533,10 +558,10 @@ function animate() {
     const rawProgress = heroScrollLength > 0 ? scrollTop / heroScrollLength : 0;
 
     const targetHeroProgress = Math.min(1, Math.max(0, rawProgress));
-    currentScroll += (targetHeroProgress - currentScroll) * 0.025;
+    currentScroll += (targetHeroProgress - currentScroll) * QUALITY.scrollLerpSpeed;
 
     const revealTarget = Math.min(1, Math.max(0, (rawProgress - TRANSITION_START) / (TRANSITION_END - TRANSITION_START)));
-    revealProgress += (revealTarget - revealProgress) * 0.04;
+    revealProgress += (revealTarget - revealProgress) * QUALITY.revealLerpSpeed;
 
     // smooth model tilt lerp
     mouseX += (targetMouseX - mouseX) * 0.05;
