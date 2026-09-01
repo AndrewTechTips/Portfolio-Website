@@ -98,6 +98,17 @@
 
 <a href="#work" class="skip-link nav-link" data-target-fraction="1.05">Skip to main content</a>
 
+<!-- Fast path. A visible, low-profile escape hatch from the cinematic hero: one click tears
+     down the WebGL loop (Reduced Motion), collapses the 9-viewport scroll-jack, and drops
+     the reader straight into the work grid. Wired up in setupFastPath() in main.js; also
+     engages automatically when the OS requests reduced motion. -->
+<button type="button" class="fast-path-btn" id="fast-path-btn"
+        aria-label="Skip the 3D intro and jump straight to selected work">
+  <span class="fast-path-btn__eyebrow">In a hurry?</span>
+  <span class="fast-path-btn__text">Skip&nbsp;3D</span>
+  <span class="fast-path-btn__arrow" aria-hidden="true">&#8594;</span>
+</button>
+
 <div class="cursor-inner"></div>
 <div class="cursor-outer"></div>
 
@@ -217,7 +228,7 @@
 
 <div class="hero-scroll-spacer"></div>
 
-<section class="project-section" id="work">
+<section class="project-section" id="work" tabindex="-1">
   <div class="project-section-header">
     <h2 class="project-section-title">Selected Work</h2>
     <p class="project-section-subtitle">A collection of things I've built.</p>

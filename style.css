@@ -135,14 +135,17 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
     text-decoration: none;
     font-size: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;
     border-radius: 20px;
-    transition: transform 0.3s, background 0.3s;
+    /* translate() = magnetic-pull offset from setupMagneticButtons (JS sets --magnet-x/y);
+       scale() = the existing hover lift, now a toggled var so the two compose cleanly. */
+    transform: translate(var(--magnet-x, 0px), var(--magnet-y, 0px)) scale(var(--btn-scale, 1));
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s;
     flex-shrink: 0;
 }
 .btn-circle {
     display: inline-block; width: 6px; height: 6px;
     border: 1px solid #000000; border-radius: 50%; background: transparent;
 }
-.contact-btn:hover { transform: scale(1.05); background: #f0f0f0; }
+.contact-btn:hover { --btn-scale: 1.05; background: #f0f0f0; }
 
 /* ---- Header social icons ---- */
 /* A vertical divider (not just a margin) separates the social row from the Contact button
@@ -540,7 +543,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
     text-transform: uppercase;
     letter-spacing: 1px;
     font-weight: 500;
-    transition: background 0.3s, color 0.3s, border-color 0.3s;
+    transform: translate(var(--magnet-x, 0px), var(--magnet-y, 0px));
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s, color 0.3s, border-color 0.3s;
 }
 .filter-btn:hover { border-color: rgba(255, 255, 255, 0.4); }
 .filter-btn.active { background: #ffffff; color: #000000; border-color: #ffffff; }
@@ -596,6 +600,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 
 .project-card {
     position: relative;
+    isolation: isolate;   /* own stacking context — keeps .project-card__glare behind the text */
     background: rgba(10, 10, 10, 0.45);
     backdrop-filter: blur(24px) saturate(140%);
     -webkit-backdrop-filter: blur(24px) saturate(140%);
@@ -603,16 +608,42 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
     border-radius: 18px;
     padding: 32px;
     opacity: 0;
-    transform: translateY(40px);
+    /* Scroll-in entrance rides the `translate` property; `transform` is left free for the
+       pointer-tracked tilt (setupCardTilt sets --tilt-x / --tilt-y). The two never fight. */
+    translate: 0 40px;
+    transform: perspective(900px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
     transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
-                transform 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+                translate 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.2s ease-out,
                 border-color 0.4s, background 0.4s;
 }
-.project-card.in-view { opacity: 1; transform: translateY(0); }
+.project-card.in-view { opacity: 1; translate: 0 0; }
 .project-card:hover {
     border-color: rgba(255, 255, 255, 0.28);
     background: rgba(15, 15, 15, 0.6);
 }
+
+/* Pointer-tracked glare for the card tilt. Transparent until setupCardTilt adds .is-tilting
+   (JS-only, so reduced-motion / touch never see it); the highlight follows the cursor via
+   the --glare-x / --glare-y custom properties. */
+.project-card__glare {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    background: radial-gradient(300px circle at var(--glare-x, 50%) var(--glare-y, 50%),
+        rgba(255, 224, 189, 0.13), rgba(255, 224, 189, 0) 55%);
+}
+.project-card.is-tilting {
+    transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+                translate 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.08s linear,
+                border-color 0.4s, background 0.4s;
+}
+.project-card.is-tilting .project-card__glare { opacity: 1; }
 .project-card-featured { border-color: rgba(255, 200, 130, 0.22); }
 .project-card-featured:hover { border-color: rgba(255, 200, 130, 0.45); }
 .featured-badge {
@@ -649,8 +680,16 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
     border-color: rgba(255, 199, 143, 0.55);
     box-shadow: 0 20px 55px -18px rgba(255, 150, 60, 0.28),
                 0 0 34px -10px rgba(255, 179, 71, 0.16);
+    /* Mirrors .project-card: entrance on `translate`, tilt on `transform`. */
     transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
-                transform 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+                translate 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.2s ease-out,
+                border-color 0.4s, background 0.4s, box-shadow 0.4s;
+}
+.project-card-flagship.is-tilting {
+    transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+                translate 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.08s linear,
                 border-color 0.4s, background 0.4s, box-shadow 0.4s;
 }
 .project-card-flagship:hover {
@@ -751,9 +790,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
     text-decoration: none;
     font-size: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;
     border-radius: 20px;
-    transition: transform 0.3s, background 0.3s;
+    transform: translate(var(--magnet-x, 0px), var(--magnet-y, 0px)) scale(var(--btn-scale, 1));
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s;
 }
-.project-btn:hover { transform: scale(1.05); background: #f0f0f0; }
+.project-btn:hover { --btn-scale: 1.05; background: #f0f0f0; }
 .project-btn-outline {
     background: transparent; color: #ffffff;
     border: 1px solid rgba(255, 255, 255, 0.5);
@@ -813,9 +853,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
     /* Kills the ~300ms tap delay and stops a tap being held as a possible pan/zoom start
        — the case-study close button was hard to dismiss on touch. */
     touch-action: manipulation;
+    transform: translate(var(--magnet-x, 0px), var(--magnet-y, 0px)) rotate(var(--close-rot, 0deg));
     transition: background 0.3s, border-color 0.3s, transform 0.3s;
 }
-.modal-close:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.4); transform: rotate(90deg); }
+.modal-close:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.4); --close-rot: 90deg; }
 
 .modal-title {
     font-family: 'Italiana', serif;
@@ -1273,4 +1314,146 @@ button.project-btn { border: none; cursor: pointer; font-family: 'Outfit', sans-
     .modal-close { width: 44px; height: 44px; top: 16px; right: 16px; }
     .case-study-body { margin-right: 0; padding-right: 4px; max-height: 72vh; }
     .case-study-body .modal-title { padding-right: 52px; }
+
+    /* Same backdrop-filter budget call as the cards above. */
+    .fast-path-btn {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        background: rgba(14, 12, 11, 0.94);
+    }
+}
+
+/* ============================================================
+   Fast path — "Skip 3D" button + the static state it engages
+   ============================================================ */
+/* A slim, quiet glass pill just under the header rule. It carries the same molten-amber ->
+   rim-blue hairline as the mobile menu panel and the flagship card, so it reads as part of
+   the forge palette rather than a bolted-on control. Enters after first paint (JS adds
+   .is-ready); the magnetic-pull vars feed its centring transform via calc(). */
+.fast-path-btn {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    z-index: 60;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 9px 16px 9px 18px;
+    background: rgba(10, 9, 8, 0.55);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 22px;
+    color: #fff6ed;
+    cursor: pointer;
+    font-family: 'Outfit', sans-serif;
+    overflow: hidden;
+    opacity: 0;
+    transform: translate(calc(-50% + var(--magnet-x, 0px)), calc(-14px + var(--magnet-y, 0px)));
+    transition: opacity 0.5s ease,
+                transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 0.3s ease, background 0.3s ease;
+}
+.fast-path-btn.is-ready {
+    opacity: 1;
+    transform: translate(calc(-50% + var(--magnet-x, 0px)), var(--magnet-y, 0px));
+}
+.fast-path-btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 14px; right: 14px;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(255, 179, 71, 0.8), rgba(120, 190, 255, 0.8));
+}
+.fast-path-btn:hover {
+    border-color: rgba(255, 255, 255, 0.24);
+    background: rgba(16, 14, 12, 0.72);
+}
+.fast-path-btn__eyebrow {
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: rgba(255, 179, 71, 0.9);
+}
+.fast-path-btn__text {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+}
+.fast-path-btn__arrow {
+    font-size: 13px;
+    line-height: 1;
+    color: rgba(255, 255, 255, 0.6);
+    transform: translateX(0);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s ease;
+}
+.fast-path-btn:hover .fast-path-btn__arrow {
+    transform: translateX(4px);
+    color: rgba(255, 220, 180, 0.95);
+}
+
+/* ---- Engaged state: html.fast-path ---- */
+/* Everything tied to the cinematic hero is removed from the page, the scroll-jack spacer is
+   collapsed (its height is also zeroed via --hero-scroll-vh in JS), and the header shrinks to
+   a plain band at the top of normal document flow. What's left: brand + social + Contact,
+   the work grid, and the anatomy section. */
+html.fast-path #webgl,
+html.fast-path .grid-lines,
+html.fast-path .grid-horizontal-line,
+html.fast-path .model-loader,
+html.fast-path .reveal-tint,
+html.fast-path .slide,
+html.fast-path .slide-image-mask,
+html.fast-path .story-dashes,
+html.fast-path .header-nav,
+html.fast-path .nav-dot,
+html.fast-path .menu-toggle,
+html.fast-path .cursor-inner,
+html.fast-path .cursor-outer,
+html.fast-path .fast-path-btn {
+    display: none !important;
+}
+html.fast-path .hero-scroll-spacer { display: none; }
+html.fast-path .cinematic-container {
+    position: absolute;
+    height: auto;
+    min-height: 0;
+    padding-bottom: 0;
+    background: #000000;
+    z-index: 30;   /* above .project-section (15) so its opaque bg can't cover the header */
+    opacity: 1 !important;   /* clears any inline opacity the render loop had set mid-transition */
+}
+html.fast-path.has-fine-pointer,
+html.fast-path.has-fine-pointer * {
+    cursor: auto !important;
+}
+#work:focus { outline: none; }   /* programmatic focus target after the fast-path jump */
+
+/* ============================================================
+   Reduced motion
+   ============================================================ */
+/* The site auto-engages the fast path under this query (see setupFastPath), which removes the
+   button and the tilt/glare entirely — these rules are the safety net if that JS never runs. */
+@media (prefers-reduced-motion: reduce) {
+    .fast-path-btn {
+        opacity: 1;
+        transform: translate(-50%, 0);
+        transition: none;
+    }
+    .contact-btn, .project-btn, .filter-btn, .modal-close {
+        transform: none;
+        transition: background 0.3s, border-color 0.3s, color 0.3s;
+    }
+    .project-card {
+        transform: none;
+        translate: none;
+        transition: opacity 0.4s ease, border-color 0.4s, background 0.4s;
+    }
+    .project-card-flagship {
+        transition: opacity 0.4s ease, border-color 0.4s, background 0.4s, box-shadow 0.4s;
+    }
+    .project-card__glare { display: none; }
+    .fast-path-btn__arrow { transition: none; }
 }
