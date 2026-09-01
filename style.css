@@ -75,6 +75,23 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
     border-radius: 50%;
 }
 
+/* ---- Screen-reader-only utility ---- */
+/* Standard visually-hidden pattern: present in the accessibility tree and readable by AT,
+   invisible and unable to affect layout for sighted users. clip+1px sizing (not
+   display:none/visibility:hidden, which pull an element out of the tree entirely) is what
+   keeps it announced by a screen reader. Used by the aria-live status regions below. */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
 /* ---- Custom cursor ---- */
 .cursor-inner {
     position: fixed; top: 0; left: 0;
@@ -149,6 +166,43 @@ html.loop-paused .cursor-outer { opacity: 0; }
     border: 1px solid #000000; border-radius: 50%; background: transparent;
 }
 .contact-btn:hover { --btn-scale: 1.05; background: #f0f0f0; }
+
+/* ---- Command palette trigger (header) ---- */
+/* A quiet "search box that isn't one" — click opens the real Cmd/Ctrl+K palette (see
+   setupCommandPalette in main.js) rather than typing inline. Hidden ≤767px alongside
+   .header-nav/.header-social (see Responsiveness); the mobile menu's own "Search & Commands"
+   row covers touch instead. */
+.cmdk-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 10px 8px 13px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    color: rgba(255, 255, 255, 0.65);
+    flex-shrink: 0;
+    transition: border-color 0.3s, color 0.3s, background 0.3s;
+}
+.cmdk-trigger:hover { border-color: rgba(255, 255, 255, 0.32); color: #ffffff; background: rgba(255, 255, 255, 0.07); }
+.cmdk-trigger__label {
+    font-family: 'Outfit', sans-serif;
+    font-size: 10.5px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+}
+.cmdk-trigger__kbd { display: flex; gap: 3px; }
+.cmdk-trigger__kbd kbd {
+    font-family: ui-monospace, 'SF Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+    font-size: 10px;
+    line-height: 1;
+    padding: 3px 5px;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: rgba(255, 255, 255, 0.7);
+}
 
 /* ---- Header social icons ---- */
 /* A vertical divider (not just a margin) separates the social row from the Contact button
@@ -259,6 +313,21 @@ html.loop-paused .cursor-outer { opacity: 0; }
 }
 .mobile-menu-link:last-child { border-bottom: none; }
 .mobile-menu-link:active { padding-left: 8px; }
+
+/* #mobile-menu-cmdk is a <button> borrowing the row layout above — every other .mobile-menu-link
+   is an <a>. Strip the native button chrome (grey ButtonFace background, full border, centred
+   system-font text) that would otherwise render it as an unreadable near-white box. */
+button.mobile-menu-link {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
 
 .mobile-menu-label {
     font-family: 'Italiana', serif;
@@ -520,6 +589,77 @@ html.loop-paused .cursor-outer { opacity: 0; }
     letter-spacing: 0.5px;
 }
 
+/* ---- Live GitHub stats widget ---- */
+/* A compact glass pill, same language as .project-filter-bar just below it. See
+   setupGithubStats() in main.js for the fetch/cache logic — this only styles the states:
+   plain numbers by default, and a small live dot that only turns green and pulses once a
+   fetch has actually succeeded this session (.is-live). There is deliberately no error/loading
+   state to style — the widget always shows a real number (cached or seeded), never a spinner
+   or a blank. */
+.github-stats {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px;
+    margin: 22px auto 0;
+    padding: 10px 20px;
+    background: rgba(10, 10, 10, 0.45);
+    backdrop-filter: blur(24px) saturate(140%);
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    font-family: 'Outfit', sans-serif;
+}
+.github-stats__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #fff6ed;
+    text-decoration: none;
+    opacity: 0.85;
+    transition: opacity 0.3s;
+}
+.github-stats__link:hover { opacity: 1; }
+.github-stats__handle { font-size: 12px; font-weight: 600; letter-spacing: 0.3px; }
+.github-stats__divider { width: 1px; height: 16px; background: rgba(255, 255, 255, 0.14); }
+.github-stats__stat {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    font-size: 11.5px;
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 0.3px;
+}
+.github-stats__stat strong {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff6ed;
+    font-variant-numeric: tabular-nums;
+}
+.github-stats__live {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.22);
+    flex-shrink: 0;
+    transition: background 0.4s ease;
+}
+.github-stats__live.is-live {
+    background: #34d399;
+    animation: github-stats-pulse 2.4s ease-out infinite;
+}
+@keyframes github-stats-pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.55); }
+    70%  { box-shadow: 0 0 0 7px rgba(52, 211, 153, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .github-stats__live.is-live { animation: none; }
+}
+html.motion-off .github-stats__live.is-live { animation: none; }
+
 /* ---- Project filter bar ---- */
 .project-filter-bar {
     display: flex;
@@ -647,6 +787,21 @@ html.loop-paused .cursor-outer { opacity: 0; }
                 border-color 0.4s, background 0.4s;
 }
 .project-card.is-tilting .project-card__glare { opacity: 1; }
+
+/* Brief amber pulse ring — the command palette's "you asked for this card" cue when jumping
+   to a project (see jumpToProject in main.js). Class is added and removed by JS on a plain
+   timer rather than an 'animationend' listener, so it clears itself the same way whether or
+   not the animation actually ran (see the reduced-motion override just below). */
+@keyframes cmdk-jump-highlight {
+    0%   { box-shadow: 0 0 0 0 rgba(255, 179, 71, 0.55); border-color: rgba(255, 199, 143, 0.9); }
+    100% { box-shadow: 0 0 0 16px rgba(255, 179, 71, 0); border-color: rgba(255, 255, 255, 0.1); }
+}
+.project-card.cmdk-jump-highlight { animation: cmdk-jump-highlight 1.4s cubic-bezier(0.16, 1, 0.3, 1); }
+@media (prefers-reduced-motion: reduce) {
+    .project-card.cmdk-jump-highlight { animation: none; outline: 2px solid rgba(255, 179, 71, 0.7); outline-offset: 3px; }
+}
+html.motion-off .project-card.cmdk-jump-highlight { animation: none; outline: 2px solid rgba(255, 179, 71, 0.7); outline-offset: 3px; }
+
 .project-card-featured { border-color: rgba(255, 200, 130, 0.22); }
 .project-card-featured:hover { border-color: rgba(255, 200, 130, 0.45); }
 .featured-badge {
@@ -746,6 +901,12 @@ html.loop-paused .cursor-outer { opacity: 0; }
 @media (prefers-reduced-motion: reduce) {
     .project-card-flagship::before { animation: none; }
 }
+/* Mirrors the rule above for the in-page "Toggle Motion" command palette action
+   (html.motion-off, set by setMotionOverride() in main.js). A class can't be matched from
+   inside an @media (prefers-reduced-motion) block, so an explicit, page-local override needs
+   its own copy of the same rule — see the larger mirrored block near the end of this file for
+   the rest of them, and why it's a deliberate duplication rather than an oversight. */
+html.motion-off .project-card-flagship::before { animation: none; }
 
 .project-title {
     font-family: 'Italiana', serif;
@@ -929,6 +1090,154 @@ html.loop-paused .cursor-outer { opacity: 0; }
 .form-status-message.error { display: flex; color: #fecaca; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); }
 
 /* ============================================================
+   Command palette (Cmd/Ctrl+K)
+   ============================================================ */
+/* A top-anchored "spotlight" rather than .modal-overlay's centered dialog — otherwise the same
+   backdrop/blur language. See setupCommandPalette() in main.js. */
+.cmdk-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 110;
+    display: flex;
+    justify-content: center;
+    padding: 12vh 20px 20px;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+.cmdk-overlay.open { opacity: 1; visibility: visible; }
+
+.cmdk-panel {
+    position: relative;
+    width: 100%;
+    max-width: 560px;
+    max-height: min(60vh, 520px);
+    height: fit-content;
+    display: flex;
+    flex-direction: column;
+    background: rgba(12, 11, 10, 0.85);
+    backdrop-filter: blur(28px) saturate(140%);
+    -webkit-backdrop-filter: blur(28px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 18px;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+    overflow: hidden;
+    transform: translateY(-14px) scale(0.98);
+    opacity: 0;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+}
+.cmdk-overlay.open .cmdk-panel { transform: translateY(0) scale(1); opacity: 1; }
+/* Same forge hairline used on the mobile menu panel and the fast-path button — a consistent
+   "this is a floating command surface" tell across the site rather than a one-off accent. */
+.cmdk-panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 20px; right: 20px;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(255, 179, 71, 0.75), rgba(120, 190, 255, 0.75));
+}
+
+.cmdk-input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+}
+.cmdk-search-icon { color: rgba(255, 255, 255, 0.4); flex-shrink: 0; }
+.cmdk-input {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #fff6ed;
+    font-family: 'Outfit', sans-serif;
+    font-size: 15px;
+    font-weight: 300;
+}
+.cmdk-input::placeholder { color: rgba(255, 255, 255, 0.32); }
+
+/* Dismiss control — an "Esc" pill on desktop, a round ✕ on touch (see the ≤767px block). */
+.cmdk-dismiss {
+    appearance: none;
+    -webkit-appearance: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: 3px 7px;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: color 0.3s, border-color 0.3s, background 0.3s;
+}
+.cmdk-dismiss:hover { color: #ffffff; border-color: rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.1); }
+.cmdk-dismiss__key {
+    font-family: ui-monospace, 'SF Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+    font-size: 10px;
+    line-height: 1;
+}
+.cmdk-dismiss__x { display: none; }
+
+.cmdk-list { list-style: none; overflow-y: auto; padding: 8px; flex: 1 1 auto; }
+.cmdk-group-label {
+    padding: 10px 12px 6px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: rgba(255, 255, 255, 0.35);
+}
+.cmdk-item {
+    display: flex;
+    align-items: center;
+    padding: 11px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+}
+.cmdk-item[aria-selected="true"] { background: rgba(255, 255, 255, 0.08); }
+.cmdk-item-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.cmdk-item-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: #fff6ed;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.cmdk-item-sub {
+    font-family: 'Outfit', sans-serif;
+    font-size: 11.5px;
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.42);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.cmdk-empty {
+    padding: 30px 20px;
+    text-align: center;
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+@media (max-width: 479px) {
+    .cmdk-overlay { padding: 8vh 12px 12px; }
+    .cmdk-panel { max-height: 70vh; }
+}
+
+/* ============================================================
    Responsiveness
    ============================================================ */
 
@@ -969,6 +1278,7 @@ html.loop-paused .cursor-outer { opacity: 0; }
        being trimmed down to a single "Work" link. */
     .header-nav { display: none; }
     .header-social { display: none; }
+    .cmdk-trigger { display: none; }
     .menu-toggle { display: flex; }
 
     /* Capped instead of scaling to full viewport width — on wide phones (large "Ultra"-class
@@ -1141,6 +1451,98 @@ html.loop-paused .cursor-outer { opacity: 0; }
 }
 .cs-actions { margin-top: 4px; }
 
+/* ============================================================
+   Architecture diagram (flagship case study only)
+   ============================================================ */
+/* Pure SVG, built once per open by buildArchitectureDiagram() in main.js straight from that
+   project's own `architecture` array — no separate diagram data to keep in sync. Every node
+   and every connector is a fixed, known size (see the DIAGRAM_* constants in main.js), which
+   is what lets every per-step value below be an nth-child rule or a plain SVG attribute set
+   in the markup string, instead of an inline style="" attribute: this page's CSP has no
+   'unsafe-inline' for style-src, and both Chrome and Firefox silently drop inline style=""
+   attributes on markup injected via innerHTML under that policy. Marked aria-hidden on its
+   wrapper — the <ol> immediately below already carries the same step names plus their full
+   detail text, so the diagram is a visual restatement, not an additional source of
+   information a screen reader needs to visit separately. */
+/* Capped and centred rather than full-bleed: a flow diagram reads better no wider than the
+   prose it sits among, and the cap keeps the SVG from scaling up to an oversized version of
+   itself on a wide desktop modal while still filling the width on a phone. */
+.cs-diagram { max-width: 460px; margin: 4px auto 30px; }
+.cs-diagram svg { display: block; width: 100%; height: auto; overflow: visible; }
+
+.cs-diagram__card { fill: rgba(255, 255, 255, 0.03); stroke: rgba(255, 255, 255, 0.14); stroke-width: 1; }
+.cs-diagram__num { font: 600 12px 'Outfit', sans-serif; fill: #1a1200; }
+/* Step name only — SVG text does not wrap, so this has to fit one line inside the card. The
+   builder hard-caps the string length (DIAGRAM_TITLE_MAX) and the viewBox is sized so this
+   font never overruns the card at any width. */
+.cs-diagram__title { font: 600 15px 'Outfit', sans-serif; fill: #fff6ed; }
+
+/* Nodes fade/rise in; connectors self-draw via stroke-dashoffset (set to the connector's
+   exact length as a plain attribute in the markup, then overridden to 0 here — a CSS rule
+   always outranks a presentation attribute, no !important needed); the traveling pulse dot
+   fades in only once its connector has finished drawing. Both trigger together off one class,
+   added by setupArchitectureDiagram()'s IntersectionObserver the moment the diagram scrolls
+   into view inside the case-study modal's own scroll container. */
+.cs-diagram__node {
+    opacity: 0;
+    transform: translateY(14px);
+    transform-box: fill-box;
+    transform-origin: center;
+    transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.cs-diagram.is-drawing .cs-diagram__node,
+.cs-diagram.is-drawn .cs-diagram__node { opacity: 1; transform: translateY(0); }
+
+.cs-diagram__path {
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.8s cubic-bezier(0.65, 0, 0.35, 1);
+}
+.cs-diagram.is-drawing .cs-diagram__path,
+.cs-diagram.is-drawn .cs-diagram__path { stroke-dashoffset: 0; }
+.cs-diagram.is-drawn .cs-diagram__path { transition: none; }   /* reduced motion: appear pre-drawn, don't animate to it */
+
+.cs-diagram__pulse { fill: #fff6ed; opacity: 0; transform-box: fill-box; }
+.cs-diagram.is-drawing .cs-diagram__pulse { animation: cs-diagram-pulse 2.6s ease-in-out infinite; }
+/* .is-drawn (reduced motion) never adds this animation — the dot just stays invisible, since
+   opacity:0 is its resting state above. */
+
+/* Every connector spans exactly DIAGRAM_GAP (46) SVG user-units by construction, so one
+   shared, hardcoded keyframe can express the pulse's travel instead of reading a per-instance
+   value — same CSP constraint as above. transform-box:fill-box (set on .cs-diagram__pulse)
+   makes this translateY relative to the dot's own position, so the same keyframe works
+   identically for every connector regardless of its absolute position in the diagram.
+   Keep the 46 here in sync with DIAGRAM_GAP in main.js. */
+@keyframes cs-diagram-pulse {
+    0%   { opacity: 0; transform: translateY(0); }
+    8%   { opacity: 1; }
+    88%  { opacity: 1; }
+    100% { opacity: 0; transform: translateY(46px); }
+}
+
+/* Stagger, via nth-child within each element's own container (.cs-diagram__nodes /
+   .cs-diagram__links) rather than a per-instance custom property — again the CSP constraint.
+   Covers up to 6 steps with individual delays; any further steps share the last one rather
+   than needing an unbounded rule list. */
+.cs-diagram__nodes > .cs-diagram__node:nth-child(1) { transition-delay: 0s; }
+.cs-diagram__nodes > .cs-diagram__node:nth-child(2) { transition-delay: .16s; }
+.cs-diagram__nodes > .cs-diagram__node:nth-child(3) { transition-delay: .32s; }
+.cs-diagram__nodes > .cs-diagram__node:nth-child(4) { transition-delay: .48s; }
+.cs-diagram__nodes > .cs-diagram__node:nth-child(5) { transition-delay: .64s; }
+.cs-diagram__nodes > .cs-diagram__node:nth-child(n+6) { transition-delay: .8s; }
+
+.cs-diagram__links > .cs-diagram__link:nth-child(1) .cs-diagram__path { transition-delay: .12s; }
+.cs-diagram__links > .cs-diagram__link:nth-child(1) .cs-diagram__pulse { animation-delay: .9s; }
+.cs-diagram__links > .cs-diagram__link:nth-child(2) .cs-diagram__path { transition-delay: .28s; }
+.cs-diagram__links > .cs-diagram__link:nth-child(2) .cs-diagram__pulse { animation-delay: 1.1s; }
+.cs-diagram__links > .cs-diagram__link:nth-child(3) .cs-diagram__path { transition-delay: .44s; }
+.cs-diagram__links > .cs-diagram__link:nth-child(3) .cs-diagram__pulse { animation-delay: 1.3s; }
+.cs-diagram__links > .cs-diagram__link:nth-child(4) .cs-diagram__path { transition-delay: .6s; }
+.cs-diagram__links > .cs-diagram__link:nth-child(4) .cs-diagram__pulse { animation-delay: 1.5s; }
+.cs-diagram__links > .cs-diagram__link:nth-child(n+5) .cs-diagram__path { transition-delay: .76s; }
+.cs-diagram__links > .cs-diagram__link:nth-child(n+5) .cs-diagram__pulse { animation-delay: 1.7s; }
+
 /* "Case Study" call-to-action on project cards — the marquee action on a featured card,
    so it takes the site's forge-amber fill to set it apart from the plain white Live button
    and the outlined Source button. */
@@ -1277,7 +1679,8 @@ button.project-btn { border: none; cursor: pointer; font-family: 'Outfit', sans-
     .project-card,
     .project-card:hover,
     .anatomy-card,
-    .project-filter-bar {
+    .project-filter-bar,
+    .github-stats {
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
         background: rgba(13, 13, 13, 0.92);
@@ -1301,6 +1704,29 @@ button.project-btn { border: none; cursor: pointer; font-family: 'Outfit', sans-
         background: rgba(9, 8, 7, 0.98);
         will-change: transform;
     }
+
+    .cmdk-panel {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        background: rgba(12, 11, 10, 0.97);
+        will-change: transform;
+    }
+
+    .cmdk-overlay {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        background: rgba(0, 0, 0, 0.82);
+    }
+
+    /* No physical Esc key on a phone — show a real tappable ✕ instead of the key hint. */
+    .cmdk-dismiss {
+        width: 38px;
+        height: 38px;
+        padding: 0;
+        border-radius: 50%;
+    }
+    .cmdk-dismiss__key { display: none; }
+    .cmdk-dismiss__x { display: block; }
 
     .modal-overlay {
         backdrop-filter: none;
@@ -1438,3 +1864,38 @@ button.project-btn { border: none; cursor: pointer; font-family: 'Outfit', sans-
     }
     .project-card__glare { display: none; }
 }
+
+/* ============================================================
+   Explicit motion override (command palette "Toggle Motion")
+   ============================================================ */
+/* html.motion-off is a page-local, in-session override — set/unset by setMotionOverride() in
+   main.js when a visitor runs "Turn motion off"/"Turn motion on" from the command palette, and
+   persisted to localStorage so it survives a reload. It is a deliberate mirror of the
+   @media (prefers-reduced-motion: reduce) block just above, rule for rule: a plain CSS class
+   can't be matched from inside that media query, so an override that has to work independently
+   of the OS-level setting needs its own copy of the same declarations. Keep the two in sync —
+   a rule added to one almost certainly belongs in the other too. Unlike the OS preference
+   (which JS deliberately leaves the hero's WebGL loop free to resume if a visitor manually
+   scrolls back up to it, see setupHeroVisibilityGate's own comment), flipping this control is
+   an explicit, immediate action, so main.js also pauses/resumes that render loop directly —
+   nothing here needs to reach the canvas, only the CSS-driven motion. */
+html.motion-off .fast-path-btn,
+html.motion-off .fast-path-btn.is-ready,
+html.motion-off .fast-path-btn.is-hidden {
+    transform: translate(-50%, 0);
+    transition: opacity 0.2s linear;
+}
+html.motion-off .fast-path-btn__arrow { transition: none; }
+html.motion-off .contact-btn, html.motion-off .project-btn, html.motion-off .filter-btn, html.motion-off .modal-close {
+    transform: none;
+    transition: background 0.3s, border-color 0.3s, color 0.3s;
+}
+html.motion-off .project-card {
+    transform: none;
+    translate: none;
+    transition: opacity 0.4s ease, border-color 0.4s, background 0.4s;
+}
+html.motion-off .project-card-flagship {
+    transition: opacity 0.4s ease, border-color 0.4s, background 0.4s, box-shadow 0.4s;
+}
+html.motion-off .project-card__glare { display: none; }

@@ -16,7 +16,29 @@ let renderLoopActive = true;   // paused by the hero-visibility IntersectionObse
 // Nothing here is destructive — the hero scene stays mounted and works if scrolled back to.
 const prefersReducedMotion =
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-const reducedMotion = prefersReducedMotion;
+// `let`, not `const` — the command palette's "Toggle Motion" action (setMotionOverride, near
+// the bottom of this file) reassigns this at runtime. Every existing read of it below is just
+// a variable lookup inside a function body, not a value captured at declaration time, so it
+// picks up that reassignment automatically with no other code here needing to change.
+let reducedMotion = prefersReducedMotion;
+
+// A visitor's explicit "Turn motion off"/"Turn motion on" choice, separate from the OS-level
+// prefersReducedMotion above and persisted across visits. Kept as its own flag rather than
+// folded into prefersReducedMotion because the two are allowed to disagree — see the
+// html.motion-off comment in style.css and setMotionOverride() below for why the OS default
+// and this explicit, page-local override are handled differently for the hero's render loop.
+const MOTION_OVERRIDE_KEY = 'motion-override';
+let motionOverrideActive = false;
+try {
+    if (localStorage.getItem(MOTION_OVERRIDE_KEY) === 'reduced') motionOverrideActive = true;
+} catch {
+    // Storage blocked (private browsing, disabled site data) — just fall back to the OS
+    // preference; nothing else here depends on this succeeding.
+}
+if (motionOverrideActive) {
+    reducedMotion = true;
+    document.documentElement.classList.add('motion-off');
+}
 // THREE.Clock is deprecated in this build (r185: "THREE.Clock: This module has been
 // deprecated. Please use THREE.Timer instead."). Timer ships in the vendored core bundle,
 // so no extra file/import-map entry is needed. API differs slightly: call update() once per
@@ -103,6 +125,102 @@ async function loadProjects() {
     } catch (error) {
         console.error('Error loading projects.json:', error);
         PROJECTS = [];
+    }
+}
+
+// ============================================================
+// Live GitHub stats widget
+// ============================================================
+// Three-layer fallback so the widget can never render broken or empty:
+//   1. Paint instantly from localStorage, if a previous visit cached it.
+//   2. Otherwise paint the seed below — real numbers, fetched from the API at the time this
+//      widget shipped, not invented placeholders. "Stale but true" beats a blank "—" while the
+//      network call is in flight, and it's also the last resort if that call fails outright.
+//   3. Kick off a live fetch in the background; on success, repaint and refresh the cache. On
+//      failure — rate-limited, offline, GitHub down — whatever's already on screen (cache or
+//      seed) just stays there. No spinner, no error state, no retry loop.
+const GITHUB_USERNAME = 'AndrewTechTips';
+const GITHUB_STATS_CACHE_KEY = 'gh-stats-cache-v1';
+// GitHub's unauthenticated rate limit is 60 requests/hour per IP. A 6-hour TTL keeps a repeat
+// visitor comfortably under that (this page makes 2 calls per fetch) while still counting as
+// "live" for a widget nobody is refreshing minute to minute.
+const GITHUB_STATS_CACHE_TTL = 6 * 60 * 60 * 1000;
+const GITHUB_STATS_SEED = { repos: 46, stars: 0, followers: 8 };
+
+function readGithubStatsCache() {
+    try {
+        const raw = localStorage.getItem(GITHUB_STATS_CACHE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (typeof parsed.repos !== 'number' || typeof parsed.stars !== 'number' || typeof parsed.followers !== 'number') return null;
+        return parsed;
+    } catch {
+        return null; // corrupted JSON, storage blocked, etc. — treat exactly like "no cache"
+    }
+}
+
+function writeGithubStatsCache(stats) {
+    try {
+        localStorage.setItem(GITHUB_STATS_CACHE_KEY, JSON.stringify({ ...stats, ts: Date.now() }));
+    } catch {
+        // Storage full/blocked — the widget still works for this page view, it just won't
+        // warm-start on the next one.
+    }
+}
+
+function paintGithubStats(stats, { live = false } = {}) {
+    const repos = document.getElementById('gh-stat-repos');
+    const stars = document.getElementById('gh-stat-stars');
+    const followers = document.getElementById('gh-stat-followers');
+    if (repos) repos.textContent = stats.repos.toLocaleString();
+    if (stars) stars.textContent = stats.stars.toLocaleString();
+    if (followers) followers.textContent = stats.followers.toLocaleString();
+    document.getElementById('gh-stats-live')?.classList.toggle('is-live', live);
+}
+
+async function fetchGithubStats() {
+    // Two calls: the profile (repo count + followers) and the repo list (to sum stars — the
+    // profile endpoint has no aggregate star count). Both are unauthenticated GETs, well
+    // inside the anonymous rate limit for a single page view; a 403 here almost always means
+    // that limit was already spent by other traffic from the visitor's IP, not anything this
+    // page did.
+    const [userRes, reposRes] = await Promise.all([
+        fetch(`https://api.github.com/users/${GITHUB_USERNAME}`, { headers: { Accept: 'application/vnd.github+json' } }),
+        fetch(`https://api.github.com/users/${GITHUB_USERNAME}/repos?per_page=100&type=owner`, { headers: { Accept: 'application/vnd.github+json' } })
+    ]);
+    if (!userRes.ok || !reposRes.ok) throw new Error(`GitHub API responded ${userRes.status}/${reposRes.status}`);
+
+    const user = await userRes.json();
+    const repos = await reposRes.json();
+    if (!Array.isArray(repos)) throw new Error('Unexpected /repos payload shape');
+
+    const stars = repos.reduce((sum, r) => sum + (r.stargazers_count || 0), 0);
+    return {
+        repos: typeof user.public_repos === 'number' ? user.public_repos : repos.length,
+        stars,
+        followers: typeof user.followers === 'number' ? user.followers : 0
+    };
+}
+
+async function setupGithubStats() {
+    const widget = document.getElementById('github-stats');
+    if (!widget) return;
+
+    const cached = readGithubStatsCache();
+    paintGithubStats(cached || GITHUB_STATS_SEED, { live: false });
+
+    // A cache still inside its TTL is good enough — skip the network call entirely rather
+    // than re-fetching on every single page load.
+    if (cached && Date.now() - cached.ts < GITHUB_STATS_CACHE_TTL) return;
+
+    try {
+        const fresh = await fetchGithubStats();
+        paintGithubStats(fresh, { live: true });
+        writeGithubStatsCache(fresh);
+    } catch (error) {
+        // See the fallback-layer comment above this section — whatever's already painted
+        // stays exactly as it is.
+        console.warn('GitHub stats: live fetch failed, showing cached/seed values instead.', error);
     }
 }
 
@@ -800,41 +918,57 @@ function updateSlides(scroll, reveal, rawScroll) {
 // panel both render a full set of `.nav-link`s (10 elements total), and index-matching them
 // against a single targetFractions array would silently break as soon as the two lists
 // diverge in order or count.
+// Shared by the header/mobile nav links and the command palette's "Navigate" commands — pulled
+// out of what used to be setupNavigation's click handler so both drive the exact same,
+// carefully-tuned scroll math instead of two copies quietly drifting apart.
+function jumpToFraction(fraction) {
+    const targetY = heroScrollLength * fraction;
+
+    // revealProgress normally lerps toward its target over a second or two, tracking the
+    // ACTUAL scroll position frame by frame as the user scrolls by hand. A programmatic jump
+    // instead teleports the scroll position, so left alone, reveal would still be lerping from
+    // wherever it USED to be — landing on "Connect" (inside slide 4's own window, but also
+    // inside the blur/tint transition zone) used to show a partially blurred, half-legible
+    // slide instead of a clean one; landing on "Work" showed slide 4's fading text hovering
+    // over the now-visible project cards. Both are the same root cause: reveal desynced from
+    // where the destination actually is. Snapping it straight to the value the destination
+    // fraction implies fixes every jump at once, in both directions, rather than special-casing
+    // one target. "Work" (fraction >= 1) is hardcoded to fully revealed rather than run through
+    // the formula — it lands inside the project section's own normal-flow content, past
+    // TRANSITION_END, and tying its correctness to it exactly matching TRANSITION_END would
+    // silently break the very next time these constants get tuned.
+    revealProgress = fraction >= 1
+        ? 1
+        : Math.min(1, Math.max(0, (fraction - TRANSITION_START) / (TRANSITION_END - TRANSITION_START)));
+
+    // "Work" additionally jumps past the hero-scroll-spacer into the project section's own
+    // content, so the camera/orbit state should already be fully settled there too — not still
+    // gliding in from wherever it was when triggered.
+    if (fraction >= 1) {
+        currentScroll = 1;
+    }
+
+    const startY = window.scrollY;
+    window.scrollTo({ top: targetY, behavior: reducedMotion ? 'auto' : 'smooth' });
+    // Some webviews (and headless/automation contexts) treat behavior:'smooth' as a no-op
+    // instead of falling back to an instant jump. If the position hasn't budged at all a
+    // beat later, force it — a working smooth scroll will already have moved by then, so this
+    // never truncates a real animation.
+    if (!reducedMotion) {
+        setTimeout(() => {
+            if (window.scrollY === startY && startY !== targetY) {
+                window.scrollTo({ top: targetY, behavior: 'auto' });
+            }
+        }, 400);
+    }
+}
+
 function setupNavigation() {
     const navLinks = document.querySelectorAll('.nav-link[data-target-fraction]');
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
-
-            const fraction = parseFloat(link.dataset.targetFraction);
-            const targetY = heroScrollLength * fraction;
-
-            // revealProgress normally lerps toward its target over a second or two, tracking
-            // the ACTUAL scroll position frame by frame as the user scrolls by hand. A nav
-            // click instead teleports the scroll position, so left alone, reveal would still
-            // be lerping from wherever it USED to be — landing on "Connect" (inside slide 4's
-            // own window, but also inside the blur/tint transition zone) used to show a
-            // partially blurred, half-legible slide instead of a clean one; landing on "Work"
-            // showed slide 4's fading text hovering over the now-visible project cards. Both
-            // are the same root cause: reveal desynced from where the destination actually is.
-            // Snapping it straight to the value the destination fraction implies fixes every
-            // nav link at once, in both directions, rather than special-casing one target.
-            // "Work" (fraction >= 1) is hardcoded to fully revealed rather than run through the
-            // formula — it lands inside the project section's own normal-flow content, past
-            // TRANSITION_END, and tying its correctness to it exactly matching TRANSITION_END
-            // would silently break the very next time these constants get tuned.
-            revealProgress = fraction >= 1
-                ? 1
-                : Math.min(1, Math.max(0, (fraction - TRANSITION_START) / (TRANSITION_END - TRANSITION_START)));
-
-            // "Work" additionally jumps past the hero-scroll-spacer into the project section's
-            // own content, so the camera/orbit state should already be fully settled there too
-            // — not still gliding in from wherever it was when clicked.
-            if (fraction >= 1) {
-                currentScroll = 1;
-            }
-
-            window.scrollTo({ top: targetY, behavior: reducedMotion ? 'auto' : 'smooth' });
+            jumpToFraction(parseFloat(link.dataset.targetFraction));
             closeMobileMenu();
         });
     });
@@ -963,9 +1097,29 @@ function escapeUrl(url) {
     }
 }
 
+// Screen-reader-only status line for the project grid — filtering and pagination both change
+// what's on screen with no page navigation and no focus move, so without this a screen-reader
+// user gets no signal anything happened at all. Also used by the command palette's
+// jumpToProject() to announce where a search jump landed. Clearing the text before setting it
+// (rather than setting it directly) is what makes most screen readers re-announce even when
+// the new message is identical to the last one — an aria-live region only fires on an actual
+// text-content mutation, not on assigning the same string twice in a row.
+let projectStatusTimer;
+function announceProjectStatus(message) {
+    const el = document.getElementById('project-status-announcer');
+    if (!el) return;
+    el.textContent = '';
+    clearTimeout(projectStatusTimer);
+    projectStatusTimer = setTimeout(() => { el.textContent = message; }, 60);
+}
+
 function buildProjectCard(project) {
     const card = document.createElement('article');
     card.className = 'project-card';
+    // Stable hook for the command palette's "jump to this project" action (see
+    // jumpToProject) — set as a real element property, not part of the innerHTML template
+    // below, so it needs no HTML-escaping.
+    card.dataset.projectId = project.id;
     if (project.featured) card.classList.add('project-card-featured');
     // One project carries `flagship: true` — it gets a distinct badge and the
     // spotlight treatment in style.css (.project-card-flagship). Keyed off the
@@ -1131,6 +1285,9 @@ function setupShowMoreButton() {
         }
 
         updateShowMoreControl(otherList.length);
+        announceProjectStatus(showingAllOthers
+            ? `Showing all ${otherList.length} other projects.`
+            : `Showing ${Math.min(OTHER_PAGE_SIZE, otherList.length)} of ${otherList.length} other projects.`);
     });
 }
 
@@ -1157,12 +1314,27 @@ function setupProjectFilters() {
         btn.className = 'filter-btn' + (value === 'all' ? ' active' : '');
         btn.dataset.filter = value;
         btn.textContent = label;
+        // .active already carries the visual state; aria-pressed carries the same state to
+        // assistive tech — these are toggle buttons (a filter stays "on" until another is
+        // chosen), which is exactly what aria-pressed exists for.
+        btn.setAttribute('aria-pressed', value === 'all' ? 'true' : 'false');
         btn.addEventListener('click', () => {
             if (value === activeProjectFilter) return;
             activeProjectFilter = value;
             showingAllOthers = false; // start collapsed again for the new filter's results
-            bar.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b === btn));
+            bar.querySelectorAll('.filter-btn').forEach(b => {
+                const isActive = b === btn;
+                b.classList.toggle('active', isActive);
+                b.setAttribute('aria-pressed', String(isActive));
+            });
             renderProjectCards(activeProjectFilter, { animateGrid: true });
+
+            const count = getVisibleProjects(activeProjectFilter).length;
+            const noun = count === 1 ? 'project' : 'projects';
+            const scope = value === 'all' ? '' : `${label} `;
+            announceProjectStatus(count > 0
+                ? `Showing ${count} ${scope}${noun}.`
+                : `No ${scope}${noun} found. Try a different filter.`);
         });
         bar.appendChild(btn);
     });
@@ -1262,6 +1434,112 @@ function setupContactModal() {
 // Escape to close, and focus returned to the button that opened it.
 let caseStudyLastTrigger = null;
 
+// ---- Flagship architecture diagram ----
+// A pure-SVG, self-drawing flow diagram for the flagship project (see the `project.flagship`
+// check in renderCaseStudy below), built directly from that project's own `architecture` array
+// in projects.json — no separate diagram data file to keep in sync with the case study text.
+// Every node is DIAGRAM_NODE_H tall and every connector exactly DIAGRAM_GAP long, which is
+// what lets style.css express per-step stagger and the pulse dot's travel distance without any
+// inline style="" attribute (see the CSP comment on .cs-diagram there for why that matters on
+// this page specifically). See setupArchitectureDiagram() below for the scroll-triggered draw.
+//
+// Nodes are the step name only — SVG <text> has no wrapping, so a longer body line would just
+// run past the card edge. The full detail for each step is in the <ol class="cs-arch"> right
+// below; the diagram's job is to show the sequence, not restate the prose. The viewBox is kept
+// narrow (DIAGRAM_NODE_X*2 + DIAGRAM_NODE_W) so it scales down less on a phone.
+const DIAGRAM_NODE_X = 30;
+const DIAGRAM_NODE_W = 300;
+const DIAGRAM_NODE_H = 52;
+const DIAGRAM_GAP = 46;   // must match the translateY distance in the cs-diagram-pulse keyframe in style.css
+const DIAGRAM_PAD = 16;
+const DIAGRAM_TITLE_MAX = 32;   // hard cap so an unusually long future step name still can't overflow the card
+
+function truncateAtWord(str, max) {
+    if (str.length <= max) return str;
+    const cut = str.slice(0, max);
+    const lastSpace = cut.lastIndexOf(' ');
+    return `${cut.slice(0, lastSpace > max * 0.6 ? lastSpace : max)}…`;
+}
+
+function buildArchitectureDiagram(steps) {
+    if (!Array.isArray(steps) || steps.length < 2) return ''; // nothing to connect
+    const n = steps.length;
+    const vbW = DIAGRAM_NODE_X * 2 + DIAGRAM_NODE_W;
+    const vbH = DIAGRAM_PAD * 2 + n * DIAGRAM_NODE_H + (n - 1) * DIAGRAM_GAP;
+    const midX = DIAGRAM_NODE_X + DIAGRAM_NODE_W / 2;
+
+    const links = steps.slice(1).map((_, i) => {
+        const y1 = DIAGRAM_PAD + i * (DIAGRAM_NODE_H + DIAGRAM_GAP) + DIAGRAM_NODE_H;
+        const y2 = y1 + DIAGRAM_GAP;
+        return `
+        <g class="cs-diagram__link">
+            <path d="M ${midX} ${y1} L ${midX} ${y2}" class="cs-diagram__path"
+                  stroke="url(#cs-diagram-gradient)" filter="url(#cs-diagram-glow)"
+                  stroke-dasharray="${DIAGRAM_GAP}" stroke-dashoffset="${DIAGRAM_GAP}"></path>
+            <circle cx="${midX}" cy="${y1}" r="3.5" class="cs-diagram__pulse" filter="url(#cs-diagram-glow)"></circle>
+        </g>`;
+    }).join('');
+
+    const nodes = steps.map((s, i) => {
+        const y = DIAGRAM_PAD + i * (DIAGRAM_NODE_H + DIAGRAM_GAP);
+        const cy = y + DIAGRAM_NODE_H / 2;
+        const title = escapeHtml(truncateAtWord(s.step || '', DIAGRAM_TITLE_MAX));
+        return `
+        <g class="cs-diagram__node">
+            <rect x="${DIAGRAM_NODE_X}" y="${y}" width="${DIAGRAM_NODE_W}" height="${DIAGRAM_NODE_H}" rx="14" class="cs-diagram__card"></rect>
+            <circle cx="${DIAGRAM_NODE_X + 24}" cy="${cy}" r="13" fill="url(#cs-diagram-badge)"></circle>
+            <text x="${DIAGRAM_NODE_X + 24}" y="${cy}" class="cs-diagram__num" text-anchor="middle" dominant-baseline="central">${i + 1}</text>
+            <text x="${DIAGRAM_NODE_X + 46}" y="${cy}" class="cs-diagram__title" dominant-baseline="central">${title}</text>
+        </g>`;
+    }).join('');
+
+    // aria-hidden: the <ol class="cs-arch"> rendered right after this carries the same step
+    // names plus their full detail text, so the diagram is a visual restatement rather than an
+    // additional source of information a screen reader needs to visit separately.
+    return `
+    <div class="cs-diagram" id="cs-diagram" aria-hidden="true">
+        <svg viewBox="0 0 ${vbW} ${vbH}" preserveAspectRatio="xMidYMin meet" role="presentation" focusable="false">
+            <defs>
+                <linearGradient id="cs-diagram-gradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#ffb347"></stop>
+                    <stop offset="100%" stop-color="#78beff"></stop>
+                </linearGradient>
+                <linearGradient id="cs-diagram-badge" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#ffe4b8"></stop>
+                    <stop offset="100%" stop-color="#ffb347"></stop>
+                </linearGradient>
+                <filter id="cs-diagram-glow" x="-60%" y="-60%" width="220%" height="220%">
+                    <feGaussianBlur stdDeviation="2.1" result="b"></feGaussianBlur>
+                    <feMerge><feMergeNode in="b"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
+                </filter>
+            </defs>
+            <g class="cs-diagram__links">${links}</g>
+            <g class="cs-diagram__nodes">${nodes}</g>
+        </svg>
+    </div>`;
+}
+
+// Draws the diagram the moment it scrolls into view inside the case-study modal's own scroll
+// container (root: scrollRoot) — not the viewport, since the modal is the thing that scrolls.
+// Reduced motion (OS preference or the command palette's explicit override, both folded into
+// the live `reducedMotion` flag) skips straight to the fully-drawn end state instead.
+function setupArchitectureDiagram(scrollRoot) {
+    const diagram = scrollRoot.querySelector('.cs-diagram');
+    if (!diagram) return;
+
+    if (reducedMotion) { diagram.classList.add('is-drawn'); return; }
+
+    const io = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                diagram.classList.add('is-drawing');
+                io.unobserve(entry.target);
+            }
+        });
+    }, { root: scrollRoot, threshold: 0.3 });
+    io.observe(diagram);
+}
+
 function renderCaseStudy(project) {
     const cs = project.caseStudy || {};
     const badgeLabel = project.flagship ? 'Flagship' : (project.featured ? 'Featured' : '');
@@ -1303,7 +1581,7 @@ function renderCaseStudy(project) {
         <h3 class="modal-title" id="case-study-modal-title">${escapeHtml(project.title)}</h3>
         ${cs.tagline ? `<p class="cs-tagline">${escapeHtml(cs.tagline)}</p>` : ''}
         ${problemParas ? `<div class="cs-block"><h4 class="cs-eyebrow">The problem</h4>${problemParas}</div>` : ''}
-        ${archItems ? `<div class="cs-block"><h4 class="cs-eyebrow">Architecture</h4><ol class="cs-arch">${archItems}</ol></div>` : ''}
+        ${archItems ? `<div class="cs-block"><h4 class="cs-eyebrow">Architecture</h4>${project.flagship ? buildArchitectureDiagram(cs.architecture) : ''}<ol class="cs-arch">${archItems}</ol></div>` : ''}
         ${decisions ? `<div class="cs-block"><h4 class="cs-eyebrow">Key decisions</h4>${decisions}</div>` : ''}
         ${cs.status ? `<p class="cs-status">${escapeHtml(cs.status)}</p>` : ''}
         <div class="project-actions cs-actions">${liveBtn}${sourceBtn}</div>
@@ -1331,6 +1609,7 @@ function setupCaseStudyModal() {
         caseStudyLastTrigger = trigger || null;
         body.innerHTML = renderCaseStudy(project);
         bindMagneticButtons();   // Live / Source buttons inside the freshly built body
+        setupArchitectureDiagram(body);   // no-op unless this project has one (see renderCaseStudy)
         body.scrollTop = 0;
         overlay.classList.add('open');
         setScrollLock('case-study', true);
@@ -1391,6 +1670,39 @@ function resumeLoop() {
     // (which would fling the spark sim and jump the model's animation clip).
     timer.update();
     rafId = requestAnimationFrame(animate);
+}
+
+// The command palette's "Toggle Motion" command. Distinct from the passive OS-level
+// prefersReducedMotion check: that default deliberately leaves the hero's WebGL loop free to
+// resume if a visitor scrolls back up to it later (see setupHeroVisibilityGate's own comment),
+// while this is an explicit, immediate request — flipping it pauses/resumes the loop right
+// now, and everything CSS-driven follows via the html.motion-off class (see the big mirrored
+// rule block near the end of style.css).
+function setMotionOverride(reduceMotion) {
+    motionOverrideActive = reduceMotion;
+    reducedMotion = prefersReducedMotion || motionOverrideActive;
+    document.documentElement.classList.toggle('motion-off', motionOverrideActive);
+    try {
+        localStorage.setItem(MOTION_OVERRIDE_KEY, motionOverrideActive ? 'reduced' : 'full');
+    } catch {
+        // Storage blocked — the toggle still works for the rest of this page view.
+    }
+
+    if (motionOverrideActive) {
+        pauseLoop();
+    } else if (!prefersReducedMotion) {
+        // Only restart the WebGL loop if the hero is actually the thing on screen right now —
+        // resuming unconditionally would leave it rendering forever under a visitor scrolled
+        // deep into the project grid, since setupHeroVisibilityGate's observer only fires on
+        // the next intersection *change*, not while already (and still) out of view. The
+        // !prefersReducedMotion guard means turning this override off never fights the OS-level
+        // accessibility preference for the loop specifically, even though it does relax the
+        // CSS-driven motion — flipping a page-local control shouldn't override what the
+        // visitor told their whole system they want.
+        const spacer = document.querySelector('.hero-scroll-spacer');
+        const rect = spacer && spacer.getBoundingClientRect();
+        if (rect && rect.bottom > 0 && rect.top < window.innerHeight) resumeLoop();
+    }
 }
 
 function skipToWork() {
@@ -1529,19 +1841,324 @@ function setupCardTilt() {
     });
 }
 
+// ============================================================
+// Command palette — Cmd/Ctrl+K
+// ============================================================
+// A lightweight, dependency-free command palette: the same overlay/focus-trap/scroll-lock/
+// Escape-to-close mechanics as the contact and case-study modals (see trapFocus, scrollLocks),
+// laid out as a top-anchored spotlight instead of a centered dialog. Results mix static
+// commands — jump to a section, email me, toggle motion, open GitHub/LinkedIn — with every
+// project in PROJECTS, filtered live as the visitor types. Selection moves via
+// aria-activedescendant on the input rather than real DOM focus — the standard "editable
+// combobox with a listbox popup" ARIA pattern — so a screen reader announces the highlighted
+// result without ever leaving the text field.
+
+// Finds a project's card, resetting the active filter and expanding "Other Projects" first if
+// that's the only reason it isn't currently rendered. Mirrors the exact filter/pagination
+// state buildProjectCard's grid already tracks, rather than searching the DOM for a card that
+// may simply not exist yet.
+function jumpToProject(project) {
+    const findCard = () => document.querySelector(`.project-card[data-project-id="${CSS.escape(project.id)}"]`);
+
+    const reveal = () => {
+        const card = findCard();
+        if (!card) return; // shouldn't happen once the filter/pagination state below is resolved
+        // Instant, not smooth: this is a command-palette "jump to result", where landing
+        // immediately with the highlight pulse to orient the eye is the convention. An animated
+        // scroll past the entire hero spacer would be disorienting here anyway, and
+        // behavior:'smooth' is an outright no-op in some webviews.
+        card.scrollIntoView({ behavior: 'auto', block: 'center' });
+        card.classList.add('cmdk-jump-highlight');
+        setTimeout(() => card.classList.remove('cmdk-jump-highlight'), 1600);
+        announceProjectStatus(`Jumped to ${project.title}.`);
+    };
+
+    let needsRerender = false;
+
+    if (activeProjectFilter !== 'all' && !project.tech.some(t => t.type === 'language' && t.name === activeProjectFilter)) {
+        activeProjectFilter = 'all';
+        document.querySelectorAll('.filter-btn').forEach(b => {
+            const isAll = b.dataset.filter === 'all';
+            b.classList.toggle('active', isAll);
+            b.setAttribute('aria-pressed', String(isAll));
+        });
+        needsRerender = true;
+    }
+    if (!project.featured && !showingAllOthers) {
+        showingAllOthers = true;
+        needsRerender = true;
+    }
+
+    if (needsRerender) {
+        renderProjectCards(activeProjectFilter, { animateGrid: true });
+        updateShowMoreControl(getVisibleProjects(activeProjectFilter).filter(p => !p.featured).length);
+        setTimeout(reveal, 340); // outlast renderProjectCards' own 300ms filter-fade timeout
+    } else {
+        reveal();
+    }
+}
+
+const CMDK_MAX_RESULTS = 8;
+let cmdkVisibleItems = [];   // the flat, currently-rendered command objects, in DOM order
+let cmdkSelectedIndex = 0;
+let cmdkStatusTimer;
+
+// Rebuilt fresh on every open/keystroke rather than cached once, so labels that depend on
+// live state (the motion toggle's own current on/off wording) are never stale.
+function buildStaticCommands() {
+    return [
+        { id: 'nav-about', group: 'Navigate', title: 'About', sub: 'The intro', keywords: 'about intro home hero', run: () => jumpToFraction(0) },
+        { id: 'nav-backend', group: 'Navigate', title: 'Backend & APIs', sub: 'FastAPI, Django', keywords: 'backend api fastapi django server', run: () => jumpToFraction(0.34) },
+        { id: 'nav-frontend', group: 'Navigate', title: 'Frontend', sub: 'JavaScript, no framework', keywords: 'frontend js javascript ui', run: () => jumpToFraction(0.62) },
+        { id: 'nav-connect', group: 'Navigate', title: 'Connect', sub: 'Open to work', keywords: 'connect open to work hire', run: () => jumpToFraction(0.80) },
+        { id: 'nav-work', group: 'Navigate', title: 'Selected Work', sub: 'The project grid', keywords: 'work projects portfolio grid selected', run: () => jumpToFraction(1.05) },
+        { id: 'action-email', group: 'Actions', title: 'Email me', sub: 'Open the contact form', keywords: 'email contact mail reach hire message', run: () => document.getElementById('contact-btn')?.click() },
+        {
+            id: 'action-motion', group: 'Actions',
+            title: motionOverrideActive ? 'Turn motion on' : 'Turn motion off',
+            sub: prefersReducedMotion
+                ? 'Your system already requests reduced motion'
+                : (motionOverrideActive ? 'Re-enable the 3D scene and animation' : 'Pause the 3D scene and reduce animation'),
+            keywords: 'motion animation reduce accessibility a11y pause 3d scene still',
+            run: () => setMotionOverride(!motionOverrideActive)
+        },
+        { id: 'action-github', group: 'Elsewhere', title: 'GitHub', sub: 'github.com/AndrewTechTips', keywords: 'github source code repo repository', run: () => window.open('https://github.com/AndrewTechTips', '_blank', 'noopener') },
+        { id: 'action-linkedin', group: 'Elsewhere', title: 'LinkedIn', sub: 'Andrei Condrea', keywords: 'linkedin resume cv profile', run: () => window.open('https://linkedin.com/in/andrei-condrea-b32148346', '_blank', 'noopener') }
+    ];
+}
+
+function buildProjectCommands() {
+    return sortProjects(PROJECTS).map(p => ({
+        id: `project-${p.id}`,
+        group: 'Projects',
+        title: p.title,
+        sub: p.tech.map(t => t.name).join(' · '),
+        keywords: `${p.title} ${p.description} ${p.tech.map(t => t.name).join(' ')}`.toLowerCase(),
+        run: () => jumpToProject(p)
+    }));
+}
+
+function filterCommands(query) {
+    const staticCommands = buildStaticCommands();
+    const projectCommands = buildProjectCommands();
+    const q = query.trim().toLowerCase();
+
+    if (!q) {
+        // Empty palette: every static command, plus a handful of projects (flagship/featured
+        // first, via sortProjects) so it reads as useful rather than just a settings menu.
+        return [...staticCommands, ...projectCommands.slice(0, 5)];
+    }
+    return [...staticCommands, ...projectCommands]
+        .filter(c => c.keywords.toLowerCase().includes(q) || c.title.toLowerCase().includes(q))
+        .slice(0, CMDK_MAX_RESULTS);
+}
+
+function announceCmdkStatus(count) {
+    const status = document.getElementById('cmdk-status');
+    if (!status) return;
+    clearTimeout(cmdkStatusTimer);
+    // Debounced separately from the (instant) visual render — announcing on every keystroke
+    // while someone is mid-word would just be noise for a screen-reader user.
+    cmdkStatusTimer = setTimeout(() => {
+        status.textContent = count === 0 ? 'No results.' : `${count} result${count === 1 ? '' : 's'}.`;
+    }, 400);
+}
+
+function renderCmdkResults(items) {
+    const list = document.getElementById('cmdk-list');
+    const empty = document.getElementById('cmdk-empty');
+    const input = document.getElementById('cmdk-input');
+    if (!list) return;
+
+    cmdkVisibleItems = items;
+    cmdkSelectedIndex = 0;
+    announceCmdkStatus(items.length);
+
+    if (items.length === 0) {
+        list.innerHTML = '';
+        if (empty) empty.hidden = false;
+        input?.removeAttribute('aria-activedescendant');
+        return;
+    }
+    if (empty) empty.hidden = true;
+
+    let lastGroup = null;
+    list.innerHTML = items.map((item, i) => {
+        const groupHeader = item.group !== lastGroup
+            ? `<li class="cmdk-group-label" role="presentation">${escapeHtml(item.group)}</li>`
+            : '';
+        lastGroup = item.group;
+        return `${groupHeader}
+        <li class="cmdk-item" role="option" id="cmdk-item-${i}" aria-selected="${i === 0 ? 'true' : 'false'}" data-cmdk-index="${i}">
+            <span class="cmdk-item-main">
+                <span class="cmdk-item-title">${escapeHtml(item.title)}</span>
+                <span class="cmdk-item-sub">${escapeHtml(item.sub || '')}</span>
+            </span>
+        </li>`;
+    }).join('');
+
+    input?.setAttribute('aria-activedescendant', 'cmdk-item-0');
+}
+
+function setCmdkSelection(index) {
+    if (!cmdkVisibleItems.length) return;
+    cmdkSelectedIndex = Math.max(0, Math.min(cmdkVisibleItems.length - 1, index));
+    const list = document.getElementById('cmdk-list');
+    const input = document.getElementById('cmdk-input');
+    if (!list) return;
+    list.querySelectorAll('.cmdk-item').forEach(el => {
+        const isSelected = Number(el.dataset.cmdkIndex) === cmdkSelectedIndex;
+        el.setAttribute('aria-selected', String(isSelected));
+        if (isSelected) {
+            input?.setAttribute('aria-activedescendant', el.id);
+            el.scrollIntoView({ block: 'nearest' });
+        }
+    });
+}
+
+function runCmdkItem(index) {
+    const item = cmdkVisibleItems[index];
+    if (!item) return;
+    closeCmdk();
+    // A task's grace so the palette's own close transition isn't fighting the action's own
+    // scroll/focus change (opening the contact modal, jumping to a project card) in the same
+    // paint. setTimeout, not requestAnimationFrame — an rAF callback can be parked
+    // indefinitely in a backgrounded/throttled tab, which would drop the command entirely.
+    setTimeout(() => item.run(), 0);
+}
+
+let cmdkLastTrigger = null;
+
+function openCmdk(sourceEl) {
+    const overlay = document.getElementById('cmdk-overlay');
+    const input = document.getElementById('cmdk-input');
+    if (!overlay || !input) return;
+    cmdkLastTrigger = sourceEl || document.activeElement;
+    closeMobileMenu();
+    overlay.classList.add('open');
+    setScrollLock('cmdk', true);
+    input.value = '';
+    renderCmdkResults(filterCommands(''));
+    // Focus the search field. The overlay just flipped visibility:hidden -> visible via the
+    // .open class; reading offsetHeight forces the style/layout flush that makes it count as
+    // visible (and therefore focusable) right now, so focus lands synchronously while opening
+    // via a button click — before that click's own focus settles on the button. The
+    // setTimeout is a fallback for any engine that still won't take it in this task.
+    void overlay.offsetHeight;
+    input.focus();
+    setTimeout(() => { if (document.activeElement !== input) input.focus(); }, 0);
+}
+
+function closeCmdk() {
+    const overlay = document.getElementById('cmdk-overlay');
+    if (!overlay) return;
+    overlay.classList.remove('open');
+    setScrollLock('cmdk', false);
+    if (cmdkLastTrigger && document.contains(cmdkLastTrigger) && typeof cmdkLastTrigger.focus === 'function') {
+        cmdkLastTrigger.focus();
+    }
+    cmdkLastTrigger = null;
+}
+
+function setupCommandPalette() {
+    const overlay = document.getElementById('cmdk-overlay');
+    const panel = overlay?.querySelector('.cmdk-panel');
+    const input = document.getElementById('cmdk-input');
+    const list = document.getElementById('cmdk-list');
+    const trigger = document.getElementById('cmdk-trigger');
+    const mobileTrigger = document.getElementById('mobile-menu-cmdk');
+    if (!overlay || !panel || !input || !list) return;
+
+    // The header trigger's kbd hint reads "Ctrl" everywhere except macOS/iOS/iPadOS, where the
+    // actual key is ⌘. navigator.platform is deprecated but still the simplest reliable signal
+    // for this; userAgentData isn't available in every engine yet, and this is cosmetic only —
+    // the shortcut listener below matches metaKey OR ctrlKey regardless of what the label says.
+    const isApplePlatform = /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent || '');
+    const keyLabel = document.getElementById('cmdk-trigger-key');
+    if (keyLabel && isApplePlatform) keyLabel.textContent = '⌘';
+
+    trigger?.addEventListener('click', () => openCmdk(trigger));
+    mobileTrigger?.addEventListener('click', () => openCmdk(mobileTrigger));
+
+    document.getElementById('cmdk-dismiss')?.addEventListener('click', closeCmdk);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeCmdk(); });
+
+    input.addEventListener('input', () => renderCmdkResults(filterCommands(input.value)));
+
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowDown') { e.preventDefault(); setCmdkSelection(cmdkSelectedIndex + 1); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); setCmdkSelection(cmdkSelectedIndex - 1); }
+        else if (e.key === 'Enter') { e.preventDefault(); runCmdkItem(cmdkSelectedIndex); }
+    });
+
+    list.addEventListener('click', (e) => {
+        const row = e.target.closest('.cmdk-item');
+        if (row) runCmdkItem(Number(row.dataset.cmdkIndex));
+    });
+    // pointerover (fires once on entry), not pointermove/mousemove, so hovering a row doesn't
+    // re-run the selection update on every pixel of pointer travel.
+    list.addEventListener('pointerover', (e) => {
+        const row = e.target.closest('.cmdk-item');
+        if (!row) return;
+        const idx = Number(row.dataset.cmdkIndex);
+        if (idx !== cmdkSelectedIndex) setCmdkSelection(idx);
+    });
+
+    window.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+            e.preventDefault();
+            if (overlay.classList.contains('open')) closeCmdk(); else openCmdk();
+            return;
+        }
+        if (!overlay.classList.contains('open')) return;
+        if (e.key === 'Escape') closeCmdk();
+        else trapFocus(panel, e);
+    });
+}
+
+// ============================================================
+// Console greeting
+// ============================================================
+// Lives in this module rather than a separate inline <script> — the page's CSP has no
+// 'unsafe-inline' for script-src, so an inline block would just be silently dropped; this file
+// is already the one script the CSP allow-lists by origin ('self').
+function printConsoleGreeting() {
+    const headline = 'font-size: 14px; font-weight: 600; color: #ffb347;';
+    const body = 'font-size: 12px; color: #d1d5db; line-height: 1.6;';
+    const mono = 'font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11.5px; color: #78beff;';
+
+    console.log('%cHi — you found the source.', headline);
+    console.log(
+        '%cNo framework, no build step: vanilla ES modules, one hand-written GLSL shader, and a ' +
+        'strict Content-Security-Policy with no unsafe-inline anywhere. If that\'s your kind of ' +
+        'engineering, I\'d like to talk.',
+        body
+    );
+    console.log('%cGitHub  https://github.com/AndrewTechTips\nEmail   condrea.andrey777@gmail.com', mono);
+    console.log('%cPS — press ⌘K / Ctrl+K for a command palette.', body);
+}
+
 window.addEventListener('DOMContentLoaded', async () => {
+    printConsoleGreeting();
     onWindowResize(); // sets --hero-scroll-vh before anything reads it
     splitTitlesIntoChars();
     initScene();       // renderer + tone mapping, lighting, createSparks(), loadModel()
     animate();
+    // A stored "motion off" override (see the top of this file) should hold from the very
+    // first frame, not just once the hero scrolls out of view — animate() above always starts
+    // the loop, so if the override was already active on load, immediately undo that.
+    if (motionOverrideActive) pauseLoop();
     setupNavigation();
     setupMobileMenu();
     setupContactModal();
     setupCaseStudyModal();
+    setupCommandPalette();   // wires the Cmd/Ctrl+K shortcut immediately; project results
+                              // populate themselves once loadProjects() resolves below
     setupFastPath();
     setupHeroVisibilityGate();   // pauses the loop + hides the button once past the hero
     bindMagneticButtons();
     setupCardTilt();
+    setupGithubStats();   // paints instantly from cache/seed, then refreshes live in the background
 
     await loadProjects(); // fetch projects.json — see PROJECTS above
     setupProjectFilters();
