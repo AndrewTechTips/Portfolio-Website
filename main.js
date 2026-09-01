@@ -50,7 +50,6 @@ let revealProgress = 0;   // smoothed Phase-2 blend, 0 (pure hero) .. 1 (fully s
 let mouseX = 0, mouseY = 0, targetMouseX = 0, targetMouseY = 0;
 
 let cursorX = window.innerWidth / 2,  cursorY = window.innerHeight / 2;
-let outerCursorX = window.innerWidth / 2, outerCursorY = window.innerHeight / 2;
 
 let bgMaterial;
 const shaderUniforms = {
@@ -756,12 +755,6 @@ function animate() {
     // smooth model tilt lerp
     mouseX += (targetMouseX - mouseX) * 0.05;
     mouseY += (targetMouseY - mouseY) * 0.05;
-
-    // outer cursor ring lerps toward inner
-    outerCursorX += (cursorX - outerCursorX) * 0.2;
-    outerCursorY += (cursorY - outerCursorY) * 0.2;
-    const cursorOuter = document.querySelector('.cursor-outer');
-    if (cursorOuter) { cursorOuter.style.left = `${outerCursorX}px`; cursorOuter.style.top = `${outerCursorY}px`; }
 
     // gentle interactive model tilt from mouse, damped out as Phase 2 settles in
     if (modelPivot) {
@@ -1656,16 +1649,16 @@ function pauseLoop() {
     if (!renderLoopActive) return;
     renderLoopActive = false;
     if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
-    // The outer cursor ring is lerped toward the pointer inside animate(); with the loop
-    // stopped it would strand wherever it was. Hide it (the inner dot still tracks live via
-    // the mousemove handler) until the loop resumes over the hero.
-    document.documentElement.classList.add('loop-paused');
 }
 
 function resumeLoop() {
     if (renderLoopActive) return;
+    // An explicit "Turn motion off" (motionOverrideActive) has to win over the hero-visibility
+    // observer: without this guard, scrolling back up to the hero would silently restart the
+    // WebGL loop the visitor just asked us to stop. The OS-level preference is deliberately not
+    // checked here — that path is allowed to resume on scroll-up (see setMotionOverride).
+    if (motionOverrideActive) return;
     renderLoopActive = true;
-    document.documentElement.classList.remove('loop-paused');
     // Consume the paused gap so the first resumed frame's delta isn't a multi-second spike
     // (which would fling the spark sim and jump the model's animation clip).
     timer.update();
@@ -1690,6 +1683,19 @@ function setMotionOverride(reduceMotion) {
 
     if (motionOverrideActive) {
         pauseLoop();
+        // Pausing the loop freezes the fixed hero canvas in place, which turns the tall
+        // hero-scroll-spacer into ~8 screens of dead, unchanging space between the visitor and
+        // the work grid — it reads as "the page froze". If they're still up in that region,
+        // land them at the work grid instead (instant, no focus steal), mirroring what the
+        // OS-level reduced-motion path already does in setupFastPath(). Nothing is torn down:
+        // scrolling back up still works, and turning motion on resumes the loop as before.
+        const spacer = document.querySelector('.hero-scroll-spacer');
+        const rect = spacer && spacer.getBoundingClientRect();
+        const inHeroZone = rect && rect.bottom > 0 && rect.top < window.innerHeight;
+        if (inHeroZone) document.getElementById('work')?.scrollIntoView({ block: 'start' });
+        // The scroll-in observer that adds .in-view to cards won't fire meaningfully on a
+        // now-static page, so reveal them all up front (same as the load-time reducedMotion path).
+        revealAllProjectCards();
     } else if (!prefersReducedMotion) {
         // Only restart the WebGL loop if the hero is actually the thing on screen right now —
         // resuming unconditionally would leave it rendering forever under a visitor scrolled

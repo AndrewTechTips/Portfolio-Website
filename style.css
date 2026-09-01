@@ -2,6 +2,33 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* Suppress the translucent box mobile browsers paint over a link/button on tap (a blue
+   flash on Android Chrome / WebView, a grey one on iOS Safari). Every interactive control
+   on this page already has its own :active / :focus-visible feedback, so the native
+   highlight is pure visual noise. Set on both html and * — WebKit treats the property as
+   inherited, but some Android WebViews only honour it when it lands directly on the
+   tapped element. `transparent` computes to rgba(0,0,0,0); spelled out for clarity. */
+html { -webkit-tap-highlight-color: rgba(0, 0, 0, 0); }
+* { -webkit-tap-highlight-color: rgba(0, 0, 0, 0); }
+
+/* Action controls carry no text worth selecting, and a tap that starts a text selection on
+   one of them produces the same stray highlight/callout the rule above is meant to kill.
+   Scoped to buttons and nav/action elements only — body copy, the contact form, and the
+   GitHub handle stay selectable. */
+button,
+.nav-link,
+.filter-btn,
+.project-btn,
+.contact-btn,
+.menu-toggle,
+.social-icon,
+.cmdk-item,
+.mobile-menu-link {
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    user-select: none;
+}
+
 html, body {
     width: 100%;
     margin: 0;
@@ -23,8 +50,8 @@ body {
 /* Custom cursor only on fine-pointer devices — see bootstrap JS for the class toggle */
 html.has-fine-pointer, html.has-fine-pointer body { cursor: none; }
 html.has-fine-pointer * { cursor: none !important; }
-.cursor-inner, .cursor-outer { display: none; }
-html.has-fine-pointer .cursor-inner, html.has-fine-pointer .cursor-outer { display: block; }
+.cursor-inner { display: none; }
+html.has-fine-pointer .cursor-inner { display: block; }
 
 #webgl {
     position: fixed;
@@ -93,6 +120,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 }
 
 /* ---- Custom cursor ---- */
+/* A single small dot that tracks the pointer 1:1 (positioned from the mousemove handler in
+   main.js). Fine-pointer devices only — see the .has-fine-pointer toggle above. */
 .cursor-inner {
     position: fixed; top: 0; left: 0;
     width: 6px; height: 6px;
@@ -102,19 +131,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
     pointer-events: none;
     z-index: 9999;
 }
-.cursor-outer {
-    position: fixed; top: 0; left: 0;
-    width: 40px; height: 40px;
-    border: 1.5px solid rgba(255, 255, 255, 0.7);
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    pointer-events: none;
-    z-index: 9998;
-    transition: width 0.3s, height 0.3s, background 0.3s, opacity 0.25s ease;
-}
-/* Render loop paused (scrolled past the hero) — the ring can't lerp, so retire it and leave
-   just the inner dot, which tracks the pointer independently. */
-html.loop-paused .cursor-outer { opacity: 0; }
 
 /* ---- Cinematic overlay layer ---- */
 .cinematic-container {
