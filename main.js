@@ -893,6 +893,10 @@ function buildProjectCard(project) {
     const card = document.createElement('article');
     card.className = 'project-card';
     if (project.featured) card.classList.add('project-card-featured');
+    // One project carries `flagship: true` — it gets a distinct badge and the
+    // spotlight treatment in style.css (.project-card-flagship). Keyed off the
+    // data, not grid position, so it stays correct under any filter/sort.
+    if (project.flagship) card.classList.add('project-card-flagship');
 
     const techHTML = project.tech.map(t => {
         const safeName = escapeHtml(t.name);
@@ -915,7 +919,8 @@ function buildProjectCard(project) {
     const sourceBtn = safeSourceUrl
         ? `<a href="${safeSourceUrl}" target="_blank" rel="noopener" class="project-btn project-btn-outline">Source <span class="btn-circle"></span></a>`
         : '';
-    const featuredBadge = project.featured ? `<span class="featured-badge">Featured</span>` : '';
+    const badgeLabel = project.flagship ? 'Flagship' : 'Featured';
+    const featuredBadge = project.featured ? `<span class="featured-badge">${badgeLabel}</span>` : '';
 
     card.innerHTML = `
         ${featuredBadge}

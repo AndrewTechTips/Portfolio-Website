@@ -628,6 +628,83 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
     border-radius: 20px;
 }
 
+/* ---- Flagship card ---- */
+/* Exactly one card in the grid carries `flagship: true` (see buildProjectCard
+   in main.js) — the deployed, Play-Store-bound project. "Iron Log" and the
+   site's own palette are a forge: molten amber (#ffb347) cooling to rim-light
+   blue. So the treatment is a single ember of heat travelling the card's rim on
+   a slow 8s loop over a dim amber<->blue hairline, plus a low warm glow lifting
+   it off the black. One moving element, nothing else; frozen to a static
+   gradient edge under prefers-reduced-motion, and to a solid warm border where
+   mask-composite is unsupported. Scoped wholly to .project-card-flagship — no
+   other card, and no layout, is touched. */
+@property --flagship-rim-angle {
+    syntax: '<angle>';
+    inherits: false;
+    initial-value: 0deg;
+}
+
+.project-card-flagship {
+    /* Fallback edge for engines without mask-composite (overridden just below). */
+    border-color: rgba(255, 199, 143, 0.55);
+    box-shadow: 0 20px 55px -18px rgba(255, 150, 60, 0.28),
+                0 0 34px -10px rgba(255, 179, 71, 0.16);
+    transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 0.4s, background 0.4s, box-shadow 0.4s;
+}
+.project-card-flagship:hover {
+    border-color: rgba(255, 199, 143, 0.8);
+    box-shadow: 0 24px 60px -16px rgba(255, 150, 60, 0.4),
+                0 0 46px -8px rgba(255, 179, 71, 0.24);
+}
+.project-card-flagship .featured-badge {
+    background: linear-gradient(135deg, #ffe9cf, #ff9d3d);
+    box-shadow: 0 0 18px rgba(255, 157, 61, 0.45);
+}
+
+@supports ((-webkit-mask-composite: xor) or (mask-composite: exclude)) {
+    .project-card-flagship,
+    .project-card-flagship:hover { border-color: transparent; }
+
+    /* The rim: a conic gradient clipped to a 1px band by masking the content-box
+       out of the padding-box, so it renders as a gradient *stroke* on the
+       silhouette without a filled panel behind the glass. The bright wedge
+       (~amber -> near-white -> blue, ~300-336deg) is the ember; the rest is a
+       low-alpha amber<->blue hairline that just shimmers as the whole thing
+       turns. Only ever paints the outer 1px, so it never reaches the text. */
+    .project-card-flagship::before {
+        content: '';
+        position: absolute;
+        inset: -1px;
+        border-radius: 19px;
+        padding: 1px;
+        background: conic-gradient(from var(--flagship-rim-angle),
+            rgba(255, 179, 71, 0.14) 0deg,
+            rgba(120, 190, 255, 0.12) 130deg,
+            rgba(255, 179, 71, 0.14) 250deg,
+            rgba(255, 224, 189, 0.92) 300deg,
+            rgba(120, 190, 255, 0.45) 336deg,
+            rgba(255, 179, 71, 0.14) 360deg);
+        -webkit-mask: linear-gradient(#000 0 0) content-box,
+                      linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor;
+                mask: linear-gradient(#000 0 0) content-box,
+                      linear-gradient(#000 0 0);
+                mask-composite: exclude;
+        animation: flagship-rim 8s linear infinite;
+        pointer-events: none;
+    }
+}
+
+@keyframes flagship-rim {
+    to { --flagship-rim-angle: 360deg; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .project-card-flagship::before { animation: none; }
+}
+
 .project-title {
     font-family: 'Italiana', serif;
     font-size: 26px;

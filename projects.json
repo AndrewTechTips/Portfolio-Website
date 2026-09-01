@@ -1,5 +1,33 @@
 [
   {
+    "id": "iron-log",
+    "title": "Iron Log",
+    "description": "Most calorie trackers turn a five-second task into a search-and-scroll chore, so people give up within a week. Iron Log turns a photo of a plate into per-ingredient macros — grounded in USDA and Open Food Facts data, with an arithmetic check that keeps a fast, cheap model honest. Three-provider AI failover, deterministic forecasting, a zero-framework JS PWA; solo-built with FastAPI and Supabase, with a Play Store release planned.",
+    "tech": [
+      {
+        "name": "python",
+        "type": "language"
+      },
+      {
+        "name": "javascript",
+        "type": "language"
+      },
+      {
+        "name": "fastapi",
+        "type": "tool"
+      },
+      {
+        "name": "supabase",
+        "type": "tool"
+      }
+    ],
+    "liveUrl": "https://andrewtechtips.github.io/calorie-tracker/",
+    "sourceUrl": "https://github.com/AndrewTechTips/calorie-tracker",
+    "featured": true,
+    "flagship": true,
+    "priority": 0
+  },
+  {
     "id": "luxury-booking-engine",
     "title": "Luxury Booking Engine",
     "description": "A hotel booking app built with Python and Streamlit. Handles credit card validation, room and spa upgrades, and generates PDF booking confirmations automatically.",
