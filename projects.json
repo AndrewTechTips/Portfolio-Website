@@ -4,107 +4,156 @@
     "title": "Iron Log",
     "description": "Most calorie trackers turn a five-second task into a search-and-scroll chore, so people give up within a week. Iron Log turns a photo of a plate into per-ingredient macros — grounded in USDA and Open Food Facts data, with an arithmetic check that keeps a fast, cheap model honest. Three-provider AI failover, deterministic forecasting, a zero-framework JS PWA; solo-built with FastAPI and Supabase, with a Play Store release planned.",
     "tech": [
-      {
-        "name": "python",
-        "type": "language"
-      },
-      {
-        "name": "javascript",
-        "type": "language"
-      },
-      {
-        "name": "fastapi",
-        "type": "tool"
-      },
-      {
-        "name": "supabase",
-        "type": "tool"
-      }
+      { "name": "python", "type": "language" },
+      { "name": "javascript", "type": "language" },
+      { "name": "fastapi", "type": "tool" },
+      { "name": "supabase", "type": "tool" }
     ],
     "liveUrl": "https://andrewtechtips.github.io/calorie-tracker/",
     "sourceUrl": "https://github.com/AndrewTechTips/calorie-tracker",
     "featured": true,
     "flagship": true,
-    "priority": 0
+    "priority": 0,
+    "caseStudy": {
+      "tagline": "Turn a photo of a plate into trustworthy macros — and keep a cheap model honest.",
+      "problem": [
+        "Most calorie trackers fail for one reason: logging a meal takes too long. You search a database, scroll past forty near-matches, guess a portion, and repeat for every ingredient. People manage it for a week and quit.",
+        "I wanted logging a meal to cost one photo and a glance. But a photo-to-macros pipeline is only worth building if the numbers are right, and vision models are confidently wrong often enough to burn through a user's trust in a handful of bad guesses."
+      ],
+      "architecture": [
+        { "step": "Capture and submit", "detail": "A zero-framework JavaScript PWA takes the photo and posts it to a FastAPI backend. No build step, installable, and it still opens to your history offline." },
+        { "step": "Three-provider AI failover", "detail": "The image goes to a fast, inexpensive vision model first. If a provider errors, rate-limits, or returns malformed output, the request falls through to the next of three providers before it gives up. One flaky vendor never takes the feature down." },
+        { "step": "Grounding in real food data", "detail": "Model output is reconciled against USDA FoodData Central and Open Food Facts rather than trusted directly, so per-ingredient macros come from an actual nutritional database instead of a guess." },
+        { "step": "Arithmetic verification", "detail": "A deterministic check re-adds the per-ingredient numbers and compares them to the reported totals. If the model's own math doesn't reconcile, the answer is rejected and re-requested. This is the piece that lets me run a cheap model without inheriting its arithmetic mistakes." },
+        { "step": "Persistence and forecasting", "detail": "Entries land in Supabase on Postgres. A deterministic forecasting routine projects weight trend from intake history — the same inputs always produce the same projection, so the line doesn't jump between refreshes." }
+      ],
+      "decisions": [
+        { "choice": "FastAPI instead of Django", "rationale": "The backend is almost entirely JSON endpoints and orchestration of outbound API calls. FastAPI's async model fits fanning one request out to several AI providers, and I needed neither an ORM nor an admin.", "tradeoff": "I gave up Django's built-in auth and migrations and assembled those parts myself." },
+        { "choice": "Verify a cheap model rather than pay for a bigger one", "rationale": "A frontier model would still be wrong sometimes and cost an order of magnitude more per call. An arithmetic reconciliation check catches the failure that actually matters — numbers that don't add up — for almost nothing.", "tradeoff": "A strict tolerance rejects some correct answers too, so I spend a few extra calls to hold the trust bar high." },
+        { "choice": "A zero-framework PWA", "rationale": "The interface is a camera button, a list, and a chart. A framework and its build pipeline would have been more moving parts than the product needed.", "tradeoff": "Routing and state are hand-rolled; past a certain feature count I would want a framework back." },
+        { "choice": "Deterministic forecasting", "rationale": "People check their trend constantly. If it shifts when the underlying data did not, the whole feature feels broken.", "tradeoff": "A probabilistic model could show uncertainty bands, which strict determinism gives up." }
+      ],
+      "status": "Solo-built. Live on the web, with a Play Store release planned."
+    }
   },
   {
-    "id": "luxury-booking-engine",
-    "title": "Luxury Booking Engine",
-    "description": "A hotel booking app built with Python and Streamlit. Handles credit card validation, room and spa upgrades, and generates PDF booking confirmations automatically.",
+    "id": "web-automation-engine",
+    "title": "Web Automation Engine",
+    "description": "A desktop automation tool with a Tkinter GUI that drives browser actions through Selenium. Uses explicit waits and background threading so the UI stays responsive during login, form submission, and file tasks.",
     "tech": [
-      {
-        "name": "python",
-        "type": "language"
-      },
-      {
-        "name": "streamlit",
-        "type": "tool"
-      }
-    ],
-    "liveUrl": "https://lux-booking.streamlit.app/",
-    "sourceUrl": "https://github.com/AndrewTechTips/Hotel-Booking",
-    "featured": true,
-    "priority": 6
-  },
-  {
-    "id": "horizon-weather",
-    "title": "Horizon Weather",
-    "description": "An async weather app built with JavaScript and Webpack. Pulls live data from the Visual Crossing API, supports geolocation, and uses a glassmorphism UI.",
-    "tech": [
-      {
-        "name": "javascript",
-        "type": "language"
-      },
-      {
-        "name": "webpack",
-        "type": "tool"
-      }
-    ],
-    "liveUrl": "https://andrewtechtips.github.io/Weather-App/",
-    "sourceUrl": "https://github.com/AndrewTechTips/Weather-App",
-    "featured": true,
-    "priority": 8
-  },
-  {
-    "id": "battleship",
-    "title": "BattleShip",
-    "description": "A browser-based Battleship game written in object-oriented JavaScript. Includes drag-and-drop ship placement, a randomized CPU opponent, and full Jest test coverage.",
-    "tech": [
-      {
-        "name": "javascript",
-        "type": "language"
-      },
-      {
-        "name": "jest",
-        "type": "tool"
-      }
-    ],
-    "liveUrl": "https://andrewtechtips.github.io/Project-BattleShip/",
-    "sourceUrl": "https://github.com/AndrewTechTips/Project-BattleShip",
-    "featured": false,
-    "priority": 9
-  },
-  {
-    "id": "student-management-system",
-    "title": "Student Management System",
-    "description": "A desktop app for managing student records, built with PyQt6 and MySQL. Handles CRUD operations, live search, and regex-based input validation.",
-    "tech": [
-      {
-        "name": "python",
-        "type": "language"
-      },
-      {
-        "name": "qt",
-        "type": "tool"
-      },
-      {
-        "name": "mysql",
-        "type": "tool"
-      }
+      { "name": "python", "type": "language" },
+      { "name": "selenium", "type": "tool" }
     ],
     "liveUrl": null,
-    "sourceUrl": "https://github.com/AndrewTechTips/Student-Management-System",
-    "featured": false,
+    "sourceUrl": "https://github.com/AndrewTechTips/Browser-Automation",
+    "featured": true,
+    "priority": 1,
+    "caseStudy": {
+      "tagline": "A desktop GUI that drives a real browser and never freezes.",
+      "problem": [
+        "Automation scripts are quick to write and painful to hand to someone else. They live in a terminal, they stall on a slow page with no feedback, and the moment you bolt a GUI on the naive way, every click freezes the window until Selenium returns.",
+        "I wanted a tool a non-programmer could actually run — log in, submit forms, move files — that stayed responsive from start to finish."
+      ],
+      "architecture": [
+        { "step": "Tkinter control surface", "detail": "A tabbed window collects credentials and task parameters. It is the only thing the user touches." },
+        { "step": "Automation on a background thread", "detail": "Every Selenium session runs off the main thread, so the UI event loop keeps painting, the window stays responsive, and a run can report progress or be cancelled instead of locking up." },
+        { "step": "Explicit waits, not sleeps", "detail": "Each step waits on a specific condition — element present, clickable, gone stale — rather than a fixed delay, so the script adapts to a slow network instead of failing on it or wasting time on a fast one." },
+        { "step": "Thread-safe status reporting", "detail": "Worker threads pass state back through a queue that the main loop drains on a timer, so no Tkinter widget is ever touched from a background thread." }
+      ],
+      "decisions": [
+        { "choice": "Threading over multiprocessing", "rationale": "The work is I/O-bound — waiting on the network and the browser — so the GIL is not the constraint, and threads share state with the GUI cheaply.", "tradeoff": "CPU-heavy post-processing would need a process pool, which this design does not cover." },
+        { "choice": "Explicit waits everywhere", "rationale": "Fixed sleeps are the number one cause of flaky automation. Condition-based waits were the single biggest reliability win in the project.", "tradeoff": "Every interaction needs a considered wait condition — more code up front than a one-line sleep." },
+        { "choice": "Ship it as a desktop app", "rationale": "The people who need it do not have Python installed and should not have to. A window with labelled fields is an interface they already know.", "tradeoff": "Packaging and cross-platform GUI quirks became my problem instead of theirs." }
+      ]
+    }
+  },
+  {
+    "id": "weather-data-api",
+    "title": "Weather Data API",
+    "description": "A Flask REST API for querying historical climate data from the European Climate Assessment dataset, with clean JSON endpoints and automatic unit conversion.",
+    "tech": [
+      { "name": "python", "type": "language" },
+      { "name": "flask", "type": "tool" }
+    ],
+    "liveUrl": null,
+    "sourceUrl": "https://github.com/AndrewTechTips/European-Climate-Archive-API",
+    "featured": true,
+    "priority": 2
+  },
+  {
+    "id": "django-restaurant-menu",
+    "title": "Django Restaurant Menu & Digital Ordering",
+    "description": "A digital ordering system for restaurants, built with Django. Manages the cart in the session, generates QR codes for tables, and gives staff a live inventory dashboard through the Django admin.",
+    "tech": [
+      { "name": "python", "type": "language" },
+      { "name": "django", "type": "tool" }
+    ],
+    "liveUrl": null,
+    "sourceUrl": "https://github.com/AndrewTechTips/Django-Restaurant-Menu",
+    "featured": true,
+    "priority": 3,
+    "caseStudy": {
+      "tagline": "QR to table, cart to kitchen — a full ordering loop on Django's built-ins.",
+      "problem": [
+        "A restaurant wants diners to scan a code at the table, browse the menu, and order without an app or a waiter. Staff want to watch stock fall in real time without learning new software.",
+        "The interesting constraint was doing both without a heavy single-page app and without standing up a second system just for staff."
+      ],
+      "architecture": [
+        { "step": "Per-table QR codes", "detail": "Each table has a generated QR code carrying its table ID. Scanning drops the diner onto the menu with their table already tied to the session." },
+        { "step": "Session-based cart", "detail": "The cart lives in the Django session rather than the database. An anonymous diner needs no account, and an abandoned cart expires on its own with no cleanup job to run." },
+        { "step": "Orders as models", "detail": "Placing an order writes ordinary Django models. From there the ORM handles order history, per-item totals, and status changes." },
+        { "step": "Staff dashboard through Django admin", "detail": "Inventory and live orders are run from a customised Django admin instead of a bespoke back office. Staff get search, filters, and permissions for free; I tailored the list views and actions rather than building CRUD by hand." }
+      ],
+      "decisions": [
+        { "choice": "Session cart instead of a database cart", "rationale": "Diners are anonymous and short-lived. Session storage removes the account step and cleans up after itself.", "tradeoff": "A cart does not survive switching devices mid-order — an acceptable limit for dining in." },
+        { "choice": "Django admin as the staff tool", "rationale": "The staff-facing job is exactly what admin is good at: list, filter, edit, permission. A custom dashboard would have been weeks of work for a worse result.", "tradeoff": "Admin styling and workflow only bend so far; a very custom staff experience would eventually outgrow it." },
+        { "choice": "Server-rendered pages over a SPA", "rationale": "The menu is mostly static content with a small interactive cart. Server rendering keeps it quick on a phone on restaurant Wi-Fi and easy to reason about.", "tradeoff": "Richer real-time behaviour would need client-side JavaScript I chose not to add yet." }
+      ]
+    }
+  },
+  {
+    "id": "ode-solver",
+    "title": "ODE Solver",
+    "description": "A visual solver for ordinary differential equations. Uses SymPy for exact symbolic solutions and Plotly for animated, frame-by-frame plots, with Euler, Heun, and RK4 methods available in a Streamlit interface.",
+    "tech": [
+      { "name": "python", "type": "language" },
+      { "name": "streamlit", "type": "tool" },
+      { "name": "plotly", "type": "tool" }
+    ],
+    "liveUrl": "https://numerical-flow.streamlit.app/",
+    "sourceUrl": "https://github.com/AndrewTechTips/Project_Calcul_Numeric",
+    "featured": true,
+    "priority": 4,
+    "caseStudy": {
+      "tagline": "Exact solutions where they exist, numerical ones where they don't — plotted step by step.",
+      "problem": [
+        "A differential equations course asks you to do two things that rarely live in one tool: find the closed-form solution when there is one, and approximate it numerically when there isn't.",
+        "I wanted a single interface where you type an equation and see both at once — the symbolic answer and the numerical curve — and can watch a method build that curve one step at a time."
+      ],
+      "architecture": [
+        { "step": "Symbolic layer with SymPy", "detail": "The input equation is parsed and handed to SymPy, which returns an exact solution when the ODE is analytically solvable, rendered in proper math notation." },
+        { "step": "Numerical layer, written by hand", "detail": "Euler, Heun, and RK4 are implemented directly rather than called from a library, so every step is visible and the accuracy gap between methods is the point instead of a hidden detail." },
+        { "step": "Frame-by-frame visualisation with Plotly", "detail": "The solver emits the solution one integration step at a time and Plotly animates it, so you watch RK4 track the true curve while Euler drifts off it." },
+        { "step": "Streamlit interface", "detail": "Equation, method, step size, and interval are Streamlit controls; changing any of them re-runs the whole pipeline." }
+      ],
+      "decisions": [
+        { "choice": "Implement the integrators from scratch", "rationale": "A library call returns a number, not understanding. Writing Euler, Heun, and RK4 by hand makes the truncation error visible and directly comparable between methods.", "tradeoff": "No adaptive step size or stiffness handling of the kind a mature library ships with." },
+        { "choice": "Symbolic and numerical side by side", "rationale": "Watching the exact solution and the approximation converge — or fail to — is the entire teaching value of the tool.", "tradeoff": "SymPy can be slow or return nothing for messy input, so the UI has to fall back to numeric-only cleanly." },
+        { "choice": "Streamlit for the interface", "rationale": "The app is inputs, then compute, then a chart. Streamlit delivers that in a fraction of the code of a web framework and deploys in one step.", "tradeoff": "Fine control over layout and interaction is limited; a bespoke frontend could animate more smoothly." }
+      ]
+    }
+  },
+  {
+    "id": "django-job-application-portal",
+    "title": "Django Job Application Portal",
+    "description": "A career portal built with Django. Sends automated email confirmations, includes an admin dashboard with CSV exports, and runs on a SQLite backend.",
+    "tech": [
+      { "name": "python", "type": "language" },
+      { "name": "django", "type": "tool" }
+    ],
+    "liveUrl": null,
+    "sourceUrl": "https://github.com/AndrewTechTips/Django-Form",
+    "featured": true,
     "priority": 5
   },
   {
@@ -112,89 +161,202 @@
     "title": "Thief Detection Notifier",
     "description": "A motion detection system built with Python and OpenCV. Buffers frames in memory and uses background threads to email a snapshot the moment it detects movement.",
     "tech": [
-      {
-        "name": "python",
-        "type": "language"
-      },
-      {
-        "name": "opencv",
-        "type": "tool"
-      }
+      { "name": "python", "type": "language" },
+      { "name": "opencv", "type": "tool" }
     ],
     "liveUrl": null,
     "sourceUrl": "https://github.com/AndrewTechTips/Thief-Detection-Notifier",
     "featured": true,
+    "priority": 6
+  },
+  {
+    "id": "binary-search-tree",
+    "title": "Binary Search Tree",
+    "description": "A balanced binary search tree implemented from scratch in ES6. Covers node insertion, deletion, and BFS/DFS traversal, with full Jest test coverage.",
+    "tech": [
+      { "name": "javascript", "type": "language" },
+      { "name": "jest", "type": "tool" }
+    ],
+    "liveUrl": null,
+    "sourceUrl": "https://github.com/AndrewTechTips/Binary-Search-Trees",
+    "featured": true,
     "priority": 7
   },
   {
-    "id": "django-job-application-portal",
-    "title": "Django Job Application Portal",
-    "description": "A career portal built with Django. Sends automated email confirmations, includes an admin dashboard with CSV exports, and runs on a SQLite backend.",
+    "id": "flask-job-application-form",
+    "title": "Flask Job Application Form",
+    "description": "A job application form built with Flask and SQLAlchemy, with backend validation, automated email notifications, and a dark UI.",
     "tech": [
-      {
-        "name": "python",
-        "type": "language"
-      },
-      {
-        "name": "django",
-        "type": "tool"
-      }
+      { "name": "python", "type": "language" },
+      { "name": "flask", "type": "tool" }
     ],
     "liveUrl": null,
-    "sourceUrl": "https://github.com/AndrewTechTips/Django-Form",
+    "sourceUrl": "https://github.com/AndrewTechTips/Flask-Form",
     "featured": false,
-    "priority": 2
+    "priority": 8
   },
   {
-    "id": "ode-solver",
-    "title": "ODE Solver",
-    "description": "A visual solver for ordinary differential equations. Uses SymPy for exact symbolic solutions and Plotly for animated, frame-by-frame plots, with Euler, Heun, and RK4 methods available in a Streamlit interface.",
+    "id": "knights-travails",
+    "title": "Knight's Travails",
+    "description": "An algorithm that finds the shortest path between two squares on a chessboard using breadth-first search and a queue-based structure.",
     "tech": [
-      {
-        "name": "python",
-        "type": "language"
-      },
-      {
-        "name": "streamlit",
-        "type": "tool"
-      },
-      {
-        "name": "plotly",
-        "type": "tool"
-      }
+      { "name": "javascript", "type": "language" }
     ],
-    "liveUrl": "https://numerical-flow.streamlit.app/",
-    "sourceUrl": "https://github.com/AndrewTechTips/Project_Calcul_Numeric",
+    "liveUrl": null,
+    "sourceUrl": "https://github.com/AndrewTechTips/Knight-Travails-JS",
+    "featured": false,
+    "priority": 9
+  },
+  {
+    "id": "hashmap",
+    "title": "HashMap",
+    "description": "A hash map implemented from scratch in ES6, handling collisions with separate chaining and auto-resizing based on a set load factor.",
+    "tech": [
+      { "name": "javascript", "type": "language" }
+    ],
+    "liveUrl": null,
+    "sourceUrl": "https://github.com/AndrewTechTips/HashMap-Implementation",
     "featured": false,
     "priority": 10
   },
   {
-    "id": "nexus-admin-dashboard",
-    "title": "NEXUS Admin Dashboard",
-    "description": "A responsive admin dashboard combining CSS Grid for structure with Flexbox for alignment. Dark mode throughout, with glassmorphism accents on the panels.",
+    "id": "student-management-system",
+    "title": "Student Management System",
+    "description": "A desktop app for managing student records, built with PyQt6 and MySQL. Handles CRUD operations, live search, and regex-based input validation.",
     "tech": [
-      {
-        "name": "html5",
-        "type": "language"
-      }
+      { "name": "python", "type": "language" },
+      { "name": "qt", "type": "tool" },
+      { "name": "mysql", "type": "tool" }
     ],
-    "liveUrl": "https://andrewtechtips.github.io/admin-dashboard/",
-    "sourceUrl": "https://github.com/AndrewTechTips/admin-dashboard",
+    "liveUrl": null,
+    "sourceUrl": "https://github.com/AndrewTechTips/Student-Management-System",
+    "featured": false,
+    "priority": 11
+  },
+  {
+    "id": "tour-event-scraper",
+    "title": "Tour Event Scraper",
+    "description": "A scraping service that checks for new concert listings on a schedule, deduplicates results with SQLite, and sends an email alert when it finds a new tour date.",
+    "tech": [
+      { "name": "python", "type": "language" },
+      { "name": "sqlite", "type": "tool" }
+    ],
+    "liveUrl": null,
+    "sourceUrl": "https://github.com/AndrewTechTips/Scrapify",
+    "featured": false,
+    "priority": 12
+  },
+  {
+    "id": "weather-forecast-dashboard",
+    "title": "Weather Forecast Dashboard",
+    "description": "A multi-day forecast dashboard pulling from the OpenWeatherMap API. Built with Streamlit and Plotly, with spline charts for temperature trends and a grid for daily conditions.",
+    "tech": [
+      { "name": "python", "type": "language" },
+      { "name": "streamlit", "type": "tool" },
+      { "name": "plotly", "type": "tool" }
+    ],
+    "liveUrl": "https://weathrly.streamlit.app/",
+    "sourceUrl": "https://github.com/AndrewTechTips/Weather-Forecast-Data-App",
+    "featured": false,
+    "priority": 13
+  },
+  {
+    "id": "luxury-booking-engine",
+    "title": "Luxury Booking Engine",
+    "description": "A hotel booking app built with Python and Streamlit. Handles credit card validation, room and spa upgrades, and generates PDF booking confirmations automatically.",
+    "tech": [
+      { "name": "python", "type": "language" },
+      { "name": "streamlit", "type": "tool" }
+    ],
+    "liveUrl": "https://lux-booking.streamlit.app/",
+    "sourceUrl": "https://github.com/AndrewTechTips/Hotel-Booking",
+    "featured": false,
+    "priority": 14
+  },
+  {
+    "id": "news-email-automation",
+    "title": "News Email Automation",
+    "description": "A script that pulls topic-specific articles from NewsAPI and sends a formatted daily digest by email over Gmail SMTP.",
+    "tech": [
+      { "name": "python", "type": "language" }
+    ],
+    "liveUrl": null,
+    "sourceUrl": "https://github.com/AndrewTechTips/Automated-News-Mail",
+    "featured": false,
+    "priority": 15
+  },
+  {
+    "id": "batch-invoice-generator",
+    "title": "Batch Invoice Generator",
+    "description": "A batch tool that reads invoice data from Excel files with pandas and generates print-ready PDF invoices with fpdf2.",
+    "tech": [
+      { "name": "python", "type": "language" },
+      { "name": "pandas", "type": "tool" }
+    ],
+    "liveUrl": null,
+    "sourceUrl": "https://github.com/AndrewTechTips/Excel_Invoices_To_Pdf",
+    "featured": false,
+    "priority": 16
+  },
+  {
+    "id": "archive-manager",
+    "title": "Archive Manager",
+    "description": "A desktop app for compressing and extracting ZIP archives, built with Python and FreeSimpleGUI, with native file dialogs and a tabbed interface.",
+    "tech": [
+      { "name": "python", "type": "language" }
+    ],
+    "liveUrl": null,
+    "sourceUrl": "https://github.com/AndrewTechTips/Archive-Manager",
+    "featured": false,
+    "priority": 17
+  },
+  {
+    "id": "horizon-weather",
+    "title": "Horizon Weather",
+    "description": "An async weather app built with JavaScript and Webpack. Pulls live data from the Visual Crossing API, supports geolocation, and uses a glassmorphism UI.",
+    "tech": [
+      { "name": "javascript", "type": "language" },
+      { "name": "webpack", "type": "tool" }
+    ],
+    "liveUrl": "https://andrewtechtips.github.io/Weather-App/",
+    "sourceUrl": "https://github.com/AndrewTechTips/Weather-App",
+    "featured": false,
+    "priority": 18
+  },
+  {
+    "id": "battleship",
+    "title": "BattleShip",
+    "description": "A browser-based Battleship game written in object-oriented JavaScript. Includes drag-and-drop ship placement, a randomized CPU opponent, and full Jest test coverage.",
+    "tech": [
+      { "name": "javascript", "type": "language" },
+      { "name": "jest", "type": "tool" }
+    ],
+    "liveUrl": "https://andrewtechtips.github.io/Project-BattleShip/",
+    "sourceUrl": "https://github.com/AndrewTechTips/Project-BattleShip",
+    "featured": false,
+    "priority": 19
+  },
+  {
+    "id": "wordle-cli",
+    "title": "Wordle CLI",
+    "description": "A terminal clone of Wordle with color-coded feedback, dictionary validation via pyenchant, and a persistent win-streak tracker.",
+    "tech": [
+      { "name": "python", "type": "language" }
+    ],
+    "liveUrl": null,
+    "sourceUrl": "https://github.com/AndrewTechTips/Worlde-Game",
     "featured": false,
     "priority": 20
   },
   {
-    "id": "glassy-tic-tac-toe",
-    "title": "Glassy Tic-Tac-Toe",
-    "description": "A classic Tic-Tac-Toe game rebuilt with vanilla JavaScript, using the module pattern and factory functions to keep game state and UI logic separate.",
+    "id": "modern-calculator",
+    "title": "Modern Calculator",
+    "description": "A responsive calculator built with vanilla JavaScript. Handles edge cases like division by zero and formats results in scientific notation when needed.",
     "tech": [
-      {
-        "name": "javascript",
-        "type": "language"
-      }
+      { "name": "javascript", "type": "language" }
     ],
-    "liveUrl": "https://andrewtechtips.github.io/Tic-Tac-Toe/",
-    "sourceUrl": "https://github.com/AndrewTechTips/Tic-Tac-Toe",
+    "liveUrl": "https://andrewtechtips.github.io/project-calculator/",
+    "sourceUrl": "https://github.com/AndrewTechTips/project-calculator",
     "featured": false,
     "priority": 21
   },
@@ -203,14 +365,8 @@
     "title": "Glassmorphic Todo List",
     "description": "A task manager with local storage persistence, built with object-oriented JavaScript and bundled with Webpack using ES6 modules.",
     "tech": [
-      {
-        "name": "javascript",
-        "type": "language"
-      },
-      {
-        "name": "webpack",
-        "type": "tool"
-      }
+      { "name": "javascript", "type": "language" },
+      { "name": "webpack", "type": "tool" }
     ],
     "liveUrl": "https://andrewtechtips.github.io/Todo-List/",
     "sourceUrl": "https://github.com/AndrewTechTips/Todo-List",
@@ -222,10 +378,7 @@
     "title": "Midnight Library",
     "description": "A book-tracking app built with object-oriented JavaScript. Uses native HTML5 modals and the Constraint Validation API for real-time form checks.",
     "tech": [
-      {
-        "name": "javascript",
-        "type": "language"
-      }
+      { "name": "javascript", "type": "language" }
     ],
     "liveUrl": "https://andrewtechtips.github.io/project-library/",
     "sourceUrl": "https://github.com/AndrewTechTips/project-library",
@@ -233,328 +386,88 @@
     "priority": 23
   },
   {
-    "id": "midnight-lounge",
-    "title": "Midnight Lounge",
-    "description": "A restaurant landing page with tab-based navigation and dynamic DOM updates, built with Webpack for a modular JavaScript structure.",
+    "id": "glassy-tic-tac-toe",
+    "title": "Glassy Tic-Tac-Toe",
+    "description": "A classic Tic-Tac-Toe game rebuilt with vanilla JavaScript, using the module pattern and factory functions to keep game state and UI logic separate.",
     "tech": [
-      {
-        "name": "javascript",
-        "type": "language"
-      },
-      {
-        "name": "webpack",
-        "type": "tool"
-      }
+      { "name": "javascript", "type": "language" }
     ],
-    "liveUrl": "https://andrewtechtips.github.io/restaurant-page/",
-    "sourceUrl": "https://github.com/AndrewTechTips/restaurant-page",
+    "liveUrl": "https://andrewtechtips.github.io/Tic-Tac-Toe/",
+    "sourceUrl": "https://github.com/AndrewTechTips/Tic-Tac-Toe",
     "featured": false,
     "priority": 24
   },
   {
-    "id": "weather-forecast-dashboard",
-    "title": "Weather Forecast Dashboard",
-    "description": "A multi-day forecast dashboard pulling from the OpenWeatherMap API. Built with Streamlit and Plotly, with spline charts for temperature trends and a grid for daily conditions.",
+    "id": "midnight-lounge",
+    "title": "Midnight Lounge",
+    "description": "A restaurant landing page with tab-based navigation and dynamic DOM updates, built with Webpack for a modular JavaScript structure.",
     "tech": [
-      {
-        "name": "python",
-        "type": "language"
-      },
-      {
-        "name": "streamlit",
-        "type": "tool"
-      },
-      {
-        "name": "plotly",
-        "type": "tool"
-      }
+      { "name": "javascript", "type": "language" },
+      { "name": "webpack", "type": "tool" }
     ],
-    "liveUrl": "https://weathrly.streamlit.app/",
-    "sourceUrl": "https://github.com/AndrewTechTips/Weather-Forecast-Data-App",
-    "featured": false,
-    "priority": 11
-  },
-  {
-    "id": "binary-search-tree",
-    "title": "Binary Search Tree",
-    "description": "A balanced binary search tree implemented from scratch in ES6. Covers node insertion, deletion, and BFS/DFS traversal, with full Jest test coverage.",
-    "tech": [
-      {
-        "name": "javascript",
-        "type": "language"
-      },
-      {
-        "name": "jest",
-        "type": "tool"
-      }
-    ],
-    "liveUrl": null,
-    "sourceUrl": "https://github.com/AndrewTechTips/Binary-Search-Trees",
-    "featured": true,
-    "priority": 18
-  },
-  {
-    "id": "hashmap",
-    "title": "HashMap",
-    "description": "A hash map implemented from scratch in ES6, handling collisions with separate chaining and auto-resizing based on a set load factor.",
-    "tech": [
-      {
-        "name": "javascript",
-        "type": "language"
-      }
-    ],
-    "liveUrl": null,
-    "sourceUrl": "https://github.com/AndrewTechTips/HashMap-Implementation",
+    "liveUrl": "https://andrewtechtips.github.io/restaurant-page/",
+    "sourceUrl": "https://github.com/AndrewTechTips/restaurant-page",
     "featured": false,
     "priority": 25
-  },
-  {
-    "id": "knights-travails",
-    "title": "Knight's Travails",
-    "description": "An algorithm that finds the shortest path between two squares on a chessboard using breadth-first search and a queue-based structure.",
-    "tech": [
-      {
-        "name": "javascript",
-        "type": "language"
-      }
-    ],
-    "liveUrl": null,
-    "sourceUrl": "https://github.com/AndrewTechTips/Knight-Travails-JS",
-    "featured": false,
-    "priority": 19
-  },
-  {
-    "id": "weather-data-api",
-    "title": "Weather Data API",
-    "description": "A Flask REST API for querying historical climate data from the European Climate Assessment dataset, with clean JSON endpoints and automatic unit conversion.",
-    "tech": [
-      {
-        "name": "python",
-        "type": "language"
-      },
-      {
-        "name": "flask",
-        "type": "tool"
-      }
-    ],
-    "liveUrl": null,
-    "sourceUrl": "https://github.com/AndrewTechTips/European-Climate-Archive-API",
-    "featured": false,
-    "priority": 12
-  },
-  {
-    "id": "tour-event-scraper",
-    "title": "Tour Event Scraper",
-    "description": "A scraping service that checks for new concert listings on a schedule, deduplicates results with SQLite, and sends an email alert when it finds a new tour date.",
-    "tech": [
-      {
-        "name": "python",
-        "type": "language"
-      },
-      {
-        "name": "sqlite",
-        "type": "tool"
-      }
-    ],
-    "liveUrl": null,
-    "sourceUrl": "https://github.com/AndrewTechTips/Scrapify",
-    "featured": false,
-    "priority": 13
-  },
-  {
-    "id": "news-email-automation",
-    "title": "News Email Automation",
-    "description": "A script that pulls topic-specific articles from NewsAPI and sends a formatted daily digest by email over Gmail SMTP.",
-    "tech": [
-      {
-        "name": "python",
-        "type": "language"
-      }
-    ],
-    "liveUrl": null,
-    "sourceUrl": "https://github.com/AndrewTechTips/Automated-News-Mail",
-    "featured": false,
-    "priority": 14
-  },
-  {
-    "id": "batch-invoice-generator",
-    "title": "Batch Invoice Generator",
-    "description": "A batch tool that reads invoice data from Excel files with pandas and generates print-ready PDF invoices with fpdf2.",
-    "tech": [
-      {
-        "name": "python",
-        "type": "language"
-      },
-      {
-        "name": "pandas",
-        "type": "tool"
-      }
-    ],
-    "liveUrl": null,
-    "sourceUrl": "https://github.com/AndrewTechTips/Excel_Invoices_To_Pdf",
-    "featured": false,
-    "priority": 15
-  },
-  {
-    "id": "archive-manager",
-    "title": "Archive Manager",
-    "description": "A desktop app for compressing and extracting ZIP archives, built with Python and FreeSimpleGUI, with native file dialogs and a tabbed interface.",
-    "tech": [
-      {
-        "name": "python",
-        "type": "language"
-      }
-    ],
-    "liveUrl": null,
-    "sourceUrl": "https://github.com/AndrewTechTips/Archive-Manager",
-    "featured": false,
-    "priority": 16
-  },
-  {
-    "id": "wordle-cli",
-    "title": "Wordle CLI",
-    "description": "A terminal clone of Wordle with color-coded feedback, dictionary validation via pyenchant, and a persistent win-streak tracker.",
-    "tech": [
-      {
-        "name": "python",
-        "type": "language"
-      }
-    ],
-    "liveUrl": null,
-    "sourceUrl": "https://github.com/AndrewTechTips/Worlde-Game",
-    "featured": false,
-    "priority": 17
-  },
-  {
-    "id": "glassmorphism-sign-up-form",
-    "title": "Glassmorphism Sign-Up Form",
-    "description": "A sign-up form built with HTML5 and CSS3, using backdrop filters and pure CSS pseudo-classes for real-time validation \u2014 no JavaScript required.",
-    "tech": [
-      {
-        "name": "html5",
-        "type": "language"
-      }
-    ],
-    "liveUrl": "https://andrewtechtips.github.io/sign-up-form/",
-    "sourceUrl": "https://github.com/AndrewTechTips/sign-up-form",
-    "featured": false,
-    "priority": 26
-  },
-  {
-    "id": "meridian-watches",
-    "title": "Meridian Watches",
-    "description": "A landing page for a luxury watch brand concept, built with Flexbox and a gold-and-slate color palette to give it a boutique, high-end feel.",
-    "tech": [
-      {
-        "name": "html5",
-        "type": "language"
-      }
-    ],
-    "liveUrl": "https://andrewtechtips.github.io/landing-page/",
-    "sourceUrl": "https://github.com/AndrewTechTips/landing-page",
-    "featured": false,
-    "priority": 28
   },
   {
     "id": "rock-paper-scissors-battle",
     "title": "Rock Paper Scissors Battle",
     "description": "A first-to-five Rock Paper Scissors game with a dark UI, built in vanilla JavaScript to handle scoring, game state, and randomized opponent moves.",
     "tech": [
-      {
-        "name": "javascript",
-        "type": "language"
-      }
+      { "name": "javascript", "type": "language" }
     ],
     "liveUrl": "https://andrewtechtips.github.io/rock-paper-scissors/",
     "sourceUrl": "https://github.com/AndrewTechTips/rock-paper-scissors",
     "featured": false,
-    "priority": 27
-  },
-  {
-    "id": "modern-calculator",
-    "title": "Modern Calculator",
-    "description": "A responsive calculator built with vanilla JavaScript. Handles edge cases like division by zero and formats results in scientific notation when needed.",
-    "tech": [
-      {
-        "name": "javascript",
-        "type": "language"
-      }
-    ],
-    "liveUrl": "https://andrewtechtips.github.io/project-calculator/",
-    "sourceUrl": "https://github.com/AndrewTechTips/project-calculator",
-    "featured": false,
-    "priority": 29
+    "priority": 26
   },
   {
     "id": "etch-a-sketch",
     "title": "Etch-a-Sketch",
     "description": "A browser recreation of the classic drawing toy, with a dynamically generated grid, custom drawing modes, a color picker, and touch support for mobile.",
     "tech": [
-      {
-        "name": "javascript",
-        "type": "language"
-      }
+      { "name": "javascript", "type": "language" }
     ],
     "liveUrl": "https://andrewtechtips.github.io/Etch-a-Sketch/",
     "sourceUrl": "https://github.com/AndrewTechTips/Etch-a-Sketch",
     "featured": false,
-    "priority": 30
+    "priority": 27
   },
   {
-    "id": "web-automation-engine",
-    "title": "Web Automation Engine",
-    "description": "A desktop automation tool with a Tkinter GUI that drives browser actions through Selenium. Uses explicit waits and background threading so the UI stays responsive during login, form submission, and file tasks.",
+    "id": "nexus-admin-dashboard",
+    "title": "NEXUS Admin Dashboard",
+    "description": "A responsive admin dashboard combining CSS Grid for structure with Flexbox for alignment. Dark mode throughout, with glassmorphism accents on the panels.",
     "tech": [
-      {
-        "name": "python",
-        "type": "language"
-      },
-      {
-        "name": "selenium",
-        "type": "tool"
-      }
+      { "name": "html5", "type": "language" }
     ],
-    "liveUrl": null,
-    "sourceUrl": "https://github.com/AndrewTechTips/Browser-Automation",
-    "featured": true,
-    "priority": 1
-  },
-  {
-    "id": "flask-job-application-form",
-    "title": "Flask Job Application Form",
-    "description": "A job application form built with Flask and SQLAlchemy, with backend validation, automated email notifications, and a dark UI.",
-    "tech": [
-      {
-        "name": "python",
-        "type": "language"
-      },
-      {
-        "name": "flask",
-        "type": "tool"
-      }
-    ],
-    "liveUrl": null,
-    "sourceUrl": "https://github.com/AndrewTechTips/Flask-Form",
+    "liveUrl": "https://andrewtechtips.github.io/admin-dashboard/",
+    "sourceUrl": "https://github.com/AndrewTechTips/admin-dashboard",
     "featured": false,
-    "priority": 3
+    "priority": 28
   },
   {
-    "id": "django-restaurant-menu",
-    "title": "Django Restaurant Menu & Digital Ordering",
-    "description": "A digital ordering system for restaurants, built with Django. Manages the cart in the session, generates QR codes for tables, and gives staff a live inventory dashboard through the Django admin.",
+    "id": "glassmorphism-sign-up-form",
+    "title": "Glassmorphism Sign-Up Form",
+    "description": "A sign-up form built with HTML5 and CSS3, using backdrop filters and pure CSS pseudo-classes for real-time validation — no JavaScript required.",
     "tech": [
-      {
-        "name": "python",
-        "type": "language"
-      },
-      {
-        "name": "django",
-        "type": "tool"
-      }
+      { "name": "html5", "type": "language" }
     ],
-    "liveUrl": null,
-    "sourceUrl": "https://github.com/AndrewTechTips/Django-Restaurant-Menu",
-    "featured": true,
-    "priority": 4
+    "liveUrl": "https://andrewtechtips.github.io/sign-up-form/",
+    "sourceUrl": "https://github.com/AndrewTechTips/sign-up-form",
+    "featured": false,
+    "priority": 29
+  },
+  {
+    "id": "meridian-watches",
+    "title": "Meridian Watches",
+    "description": "A landing page for a luxury watch brand concept, built with Flexbox and a gold-and-slate color palette to give it a boutique, high-end feel.",
+    "tech": [
+      { "name": "html5", "type": "language" }
+    ],
+    "liveUrl": "https://andrewtechtips.github.io/landing-page/",
+    "sourceUrl": "https://github.com/AndrewTechTips/landing-page",
+    "featured": false,
+    "priority": 30
   }
 ]

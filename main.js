@@ -7,7 +7,11 @@ let scene, camera, renderer;
 let gltfModel;     // the statue
 let modelPivot;    // pivot group for perfect center-rotation
 let mixer;
-const clock = new THREE.Clock();
+// THREE.Clock is deprecated in this build (r185: "THREE.Clock: This module has been
+// deprecated. Please use THREE.Timer instead."). Timer ships in the vendored core bundle,
+// so no extra file/import-map entry is needed. API differs slightly: call update() once per
+// frame, then getDelta() / getElapsed() (not getElapsedTime()). Both still return seconds.
+const timer = new THREE.Timer();
 let currentScroll = 0;    // smoothed hero progress, clamped 0..1
 let revealProgress = 0;   // smoothed Phase-2 blend, 0 (pure hero) .. 1 (fully settled/blurred)
 
@@ -549,7 +553,8 @@ function splitTitlesIntoChars() {
 
 function animate() {
     requestAnimationFrame(animate);
-    const deltaTime = clock.getDelta();
+    timer.update();                       // sample the frame clock once
+    const deltaTime = timer.getDelta();
     if (mixer) mixer.update(deltaTime);
 
     // 1. raw progress over the fixed hero distance (NOT total document scroll)
@@ -583,7 +588,7 @@ function animate() {
     // 2. sparks physics — always running on real elapsed time, never frozen
     if (sparkParticles) {
         const positions = sparkParticles.geometry.attributes.position.array;
-        const time = clock.getElapsedTime();
+        const time = timer.getElapsed();
         const scrollVelocity = Math.abs(targetHeroProgress - currentScroll);
         const speedMultiplier = 1.0 + scrollVelocity * 9.0;
         const turbulence = scrollVelocity * 0.8;
@@ -631,7 +636,7 @@ function animate() {
 
     // background shader uniforms — keeps breathing via uTime even once frozen
     if (shaderUniforms) {
-        shaderUniforms.uTime.value = clock.getElapsedTime();
+        shaderUniforms.uTime.value = timer.getElapsed();
         shaderUniforms.uMouse.value.set(mouseX, -mouseY);
         shaderUniforms.uScroll.value = currentScroll;
     }
@@ -919,6 +924,12 @@ function buildProjectCard(project) {
     const sourceBtn = safeSourceUrl
         ? `<a href="${safeSourceUrl}" target="_blank" rel="noopener" class="project-btn project-btn-outline">Source <span class="btn-circle"></span></a>`
         : '';
+    // Only projects carrying a `caseStudy` object in projects.json get this button; it's the
+    // marquee action, so it renders first and takes the forge-amber fill (see style.css).
+    // Clicks are handled by an event-delegated listener in setupCaseStudyModal().
+    const caseStudyBtn = project.caseStudy
+        ? `<button type="button" class="project-btn project-btn-casestudy" data-casestudy-id="${escapeHtml(project.id)}">Case Study <span class="btn-circle"></span></button>`
+        : '';
     const badgeLabel = project.flagship ? 'Flagship' : 'Featured';
     const featuredBadge = project.featured ? `<span class="featured-badge">${badgeLabel}</span>` : '';
 
@@ -927,7 +938,7 @@ function buildProjectCard(project) {
         <h3 class="project-title">${escapeHtml(project.title)}</h3>
         <p class="project-desc">${escapeHtml(project.description)}</p>
         <div class="project-tech">${techHTML}</div>
-        <div class="project-actions">${liveBtn}${sourceBtn}</div>
+        <div class="project-actions">${caseStudyBtn}${liveBtn}${sourceBtn}</div>
     `;
     return card;
 }
@@ -1168,6 +1179,110 @@ function setupContactModal() {
     });
 }
 
+// ---- Case study modal ----
+// A few projects carry a `caseStudy` object in projects.json (tagline / problem /
+// architecture / decisions). Their cards get a "Case Study" button; clicking it opens
+// this modal, populated from that data. Same overlay mechanics as the contact modal —
+// shared .modal-overlay / .contact-modal styles, the scrollLocks Set, trapFocus(),
+// Escape to close, and focus returned to the button that opened it.
+let caseStudyLastTrigger = null;
+
+function renderCaseStudy(project) {
+    const cs = project.caseStudy || {};
+    const badgeLabel = project.flagship ? 'Flagship' : (project.featured ? 'Featured' : '');
+    const badge = badgeLabel ? `<span class="featured-badge">${escapeHtml(badgeLabel)}</span>` : '';
+
+    const problemParas = (Array.isArray(cs.problem) ? cs.problem : [cs.problem])
+        .filter(Boolean)
+        .map(p => `<p class="cs-para">${escapeHtml(p)}</p>`)
+        .join('');
+
+    const archItems = (cs.architecture || [])
+        .map(a => `
+            <li class="cs-arch-item">
+                <span class="cs-arch-title">${escapeHtml(a.step)}</span>
+                <span class="cs-arch-detail">${escapeHtml(a.detail)}</span>
+            </li>`)
+        .join('');
+
+    const decisions = (cs.decisions || [])
+        .map(d => `
+            <div class="cs-decision">
+                <p class="cs-decision-choice">${escapeHtml(d.choice)}</p>
+                <p class="cs-decision-rationale">${escapeHtml(d.rationale)}</p>
+                ${d.tradeoff ? `<p class="cs-decision-tradeoff"><span>Trade-off</span> ${escapeHtml(d.tradeoff)}</p>` : ''}
+            </div>`)
+        .join('');
+
+    const safeLiveUrl = project.liveUrl ? escapeUrl(project.liveUrl) : null;
+    const safeSourceUrl = project.sourceUrl ? escapeUrl(project.sourceUrl) : null;
+    const liveBtn = safeLiveUrl
+        ? `<a href="${safeLiveUrl}" target="_blank" rel="noopener" class="project-btn">Live <span class="btn-circle"></span></a>`
+        : '';
+    const sourceBtn = safeSourceUrl
+        ? `<a href="${safeSourceUrl}" target="_blank" rel="noopener" class="project-btn project-btn-outline">Source <span class="btn-circle"></span></a>`
+        : '';
+
+    return `
+        ${badge}
+        <h3 class="modal-title" id="case-study-modal-title">${escapeHtml(project.title)}</h3>
+        ${cs.tagline ? `<p class="cs-tagline">${escapeHtml(cs.tagline)}</p>` : ''}
+        ${problemParas ? `<div class="cs-block"><h4 class="cs-eyebrow">The problem</h4>${problemParas}</div>` : ''}
+        ${archItems ? `<div class="cs-block"><h4 class="cs-eyebrow">Architecture</h4><ol class="cs-arch">${archItems}</ol></div>` : ''}
+        ${decisions ? `<div class="cs-block"><h4 class="cs-eyebrow">Key decisions</h4>${decisions}</div>` : ''}
+        ${cs.status ? `<p class="cs-status">${escapeHtml(cs.status)}</p>` : ''}
+        <div class="project-actions cs-actions">${liveBtn}${sourceBtn}</div>
+    `;
+}
+
+function setupCaseStudyModal() {
+    const overlay = document.getElementById('case-study-modal-overlay');
+    if (!overlay) return;
+    const modalEl = overlay.querySelector('.case-study-modal');
+    const body = document.getElementById('case-study-body');
+    const closeBtn = document.getElementById('case-study-modal-close');
+    if (!modalEl || !body || !closeBtn) return;
+
+    const closeCaseStudy = () => {
+        overlay.classList.remove('open');
+        setScrollLock('case-study', false);
+        if (caseStudyLastTrigger && document.contains(caseStudyLastTrigger)) {
+            caseStudyLastTrigger.focus();
+        }
+        caseStudyLastTrigger = null;
+    };
+
+    const openCaseStudy = (project, trigger) => {
+        caseStudyLastTrigger = trigger || null;
+        body.innerHTML = renderCaseStudy(project);
+        body.scrollTop = 0;
+        overlay.classList.add('open');
+        setScrollLock('case-study', true);
+        // Deferred a frame: the overlay only just flipped from visibility:hidden to visible,
+        // and an element inside a still-hidden ancestor can't take focus in every engine.
+        requestAnimationFrame(() => closeBtn.focus());
+    };
+
+    // Delegated: the grids re-render on every filter change, so a listener bound to each
+    // button would need re-attaching each time. PROJECTS is read at click time, by which
+    // point loadProjects() has resolved.
+    document.addEventListener('click', (e) => {
+        const trigger = e.target.closest('[data-casestudy-id]');
+        if (!trigger) return;
+        e.preventDefault();
+        const project = PROJECTS.find(p => p.id === trigger.dataset.casestudyId);
+        if (project && project.caseStudy) openCaseStudy(project, trigger);
+    });
+
+    closeBtn.addEventListener('click', closeCaseStudy);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeCaseStudy(); });
+    window.addEventListener('keydown', (e) => {
+        if (!overlay.classList.contains('open')) return;
+        if (e.key === 'Escape') closeCaseStudy();
+        else trapFocus(modalEl, e);
+    });
+}
+
 window.addEventListener('DOMContentLoaded', async () => {
     onWindowResize(); // sets --hero-scroll-vh before anything reads it
     splitTitlesIntoChars();
@@ -1176,6 +1291,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     setupNavigation();
     setupMobileMenu();
     setupContactModal();
+    setupCaseStudyModal();
 
     await loadProjects(); // fetch projects.json — see PROJECTS above
     setupProjectFilters();

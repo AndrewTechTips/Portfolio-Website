@@ -805,6 +805,14 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 50%;
     color: #ffffff;
+    /* Explicit stack so the close button always sits above the scrollable modal body,
+       even once that body gets its own compositing layer on mobile (see the perf block
+       at the end of this file). Relying on paint order alone broke once will-change
+       entered the picture. */
+    z-index: 2;
+    /* Kills the ~300ms tap delay and stops a tap being held as a possible pan/zoom start
+       — the case-study close button was hard to dismiss on touch. */
+    touch-action: manipulation;
     transition: background 0.3s, border-color 0.3s, transform 0.3s;
 }
 .modal-close:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.4); transform: rotate(90deg); }
@@ -935,4 +943,334 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 @media (max-width: 479px) {
     .project-card { padding: 24px; }
     .project-grid { grid-template-columns: 1fr; }
+}
+
+/* ============================================================
+   Case study modal
+   ============================================================ */
+/* Reuses .modal-overlay / .contact-modal (backdrop, entrance transition, close button)
+   from the contact modal. Only the width and an internal scroll region differ: the panel
+   itself stays put so the close button never scrolls out of reach, while .case-study-body
+   scrolls. Content is injected from a project's `caseStudy` object in projects.json — see
+   renderCaseStudy() in main.js. */
+.case-study-modal {
+    max-width: 720px;
+    padding: 40px 36px;
+}
+.case-study-body {
+    max-height: min(72vh, 640px);
+    overflow-y: auto;
+    padding-right: 8px;
+    margin-right: -8px;
+}
+.case-study-body .modal-title {
+    margin-top: 2px;
+    margin-bottom: 6px;
+    padding-right: 44px; /* clears the absolutely-positioned close button on the first line */
+}
+.cs-tagline {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 300;
+    font-size: 15px;
+    line-height: 1.6;
+    color: #ffd9a8;
+    margin-bottom: 26px;
+}
+.cs-block { margin-bottom: 28px; }
+.cs-block:last-of-type { margin-bottom: 20px; }
+.cs-eyebrow {
+    font-family: 'Outfit', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 14px;
+}
+.cs-para {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 300;
+    font-size: 14.5px;
+    line-height: 1.75;
+    color: #d1d5db;
+}
+.cs-para + .cs-para { margin-top: 12px; }
+
+/* Architecture — a numbered vertical flow. Counter-driven, so the markup stays a plain
+   <ol> with no hand-written numbers. */
+.cs-arch { list-style: none; counter-reset: cs-step; }
+.cs-arch-item {
+    position: relative;
+    counter-increment: cs-step;
+    padding-left: 44px;
+    padding-bottom: 22px;
+}
+.cs-arch-item:last-child { padding-bottom: 0; }
+.cs-arch-item::before {
+    content: counter(cs-step);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Outfit', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: #1a1200;
+    background: linear-gradient(135deg, #ffe4b8, #ffb347);
+    border-radius: 50%;
+}
+/* connector line between the number badges */
+.cs-arch-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 13.5px;
+    top: 30px;
+    bottom: 0;
+    width: 1px;
+    background: linear-gradient(rgba(255, 179, 71, 0.4), rgba(120, 190, 255, 0.25));
+}
+.cs-arch-title {
+    display: block;
+    font-family: 'Outfit', sans-serif;
+    font-size: 13.5px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    color: #fff6ed;
+    margin-bottom: 4px;
+}
+.cs-arch-detail {
+    display: block;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 300;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #d1d5db;
+}
+
+/* Key decisions — choice / why / trade-off, with a warm left rule. */
+.cs-decision {
+    border-left: 2px solid rgba(255, 179, 71, 0.4);
+    padding-left: 16px;
+    margin-bottom: 18px;
+}
+.cs-decision:last-child { margin-bottom: 0; }
+.cs-decision-choice {
+    font-family: 'Outfit', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff6ed;
+    margin-bottom: 5px;
+}
+.cs-decision-rationale {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 300;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #d1d5db;
+}
+.cs-decision-tradeoff {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 300;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #9aa0a6;
+    margin-top: 6px;
+}
+.cs-decision-tradeoff span {
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(255, 179, 71, 0.75);
+    margin-right: 6px;
+}
+.cs-status {
+    font-family: 'Outfit', sans-serif;
+    font-size: 12.5px;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.55);
+    margin-bottom: 22px;
+}
+.cs-actions { margin-top: 4px; }
+
+/* "Case Study" call-to-action on project cards — the marquee action on a featured card,
+   so it takes the site's forge-amber fill to set it apart from the plain white Live button
+   and the outlined Source button. */
+button.project-btn { border: none; cursor: pointer; font-family: 'Outfit', sans-serif; }
+.project-btn-casestudy {
+    background: linear-gradient(135deg, #ffe4b8, #ffb347);
+    color: #1a1200;
+}
+.project-btn-casestudy:hover { background: linear-gradient(135deg, #ffecd0, #ffbf5e); }
+
+/* ============================================================
+   Anatomy of this site
+   ============================================================ */
+/* Normal-flow section after #work. Needs the same z-index/opaque-background treatment as
+   .project-section so it renders above the fixed WebGL canvas rather than letting the
+   blurred scene bleed through. */
+.anatomy-section {
+    position: relative;
+    z-index: 15;
+    background: #000000;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 120px 60px 150px;
+    box-sizing: border-box;
+}
+.anatomy-inner { max-width: 1200px; margin: 0 auto; }
+.anatomy-header { max-width: 720px; margin: 0 auto 56px; text-align: center; }
+.anatomy-title {
+    font-family: 'Italiana', serif;
+    font-size: clamp(34px, 5vw, 60px);
+    color: #fff6ed;
+    margin-bottom: 18px;
+}
+.anatomy-lead {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 300;
+    font-size: 15px;
+    line-height: 1.75;
+    color: #d1d5db;
+    letter-spacing: 0.3px;
+}
+.anatomy-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 22px;
+}
+.anatomy-card {
+    background: rgba(10, 10, 10, 0.45);
+    backdrop-filter: blur(24px) saturate(140%);
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 18px;
+    padding: 28px;
+}
+.anatomy-label {
+    display: inline-block;
+    font-family: ui-monospace, 'SF Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: rgba(255, 179, 71, 0.85);
+    padding: 4px 10px;
+    border: 1px solid rgba(255, 179, 71, 0.25);
+    border-radius: 20px;
+    margin-bottom: 16px;
+}
+.anatomy-card-title {
+    font-family: 'Italiana', serif;
+    font-size: 21px;
+    color: #fff6ed;
+    margin-bottom: 10px;
+}
+.anatomy-card-body {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 300;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #d1d5db;
+}
+.anatomy-card-body code,
+.anatomy-footnote code {
+    font-family: ui-monospace, 'SF Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+    font-size: 0.86em;
+    color: #ffd9a8;
+    background: rgba(255, 255, 255, 0.06);
+    padding: 1px 5px;
+    border-radius: 5px;
+}
+.anatomy-footnote {
+    max-width: 720px;
+    margin: 48px auto 0;
+    text-align: center;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 300;
+    font-size: 13.5px;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.55);
+}
+.anatomy-footnote a {
+    color: #ffd9a8;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(255, 217, 168, 0.35);
+    white-space: nowrap;
+}
+.anatomy-footnote a:hover { border-bottom-color: rgba(255, 217, 168, 0.8); }
+
+@media (max-width: 1023px) {
+    .anatomy-section { padding: 110px 32px 130px; }
+}
+@media (max-width: 767px) {
+    .anatomy-section { padding: 90px 24px 110px; }
+    .anatomy-header { margin-bottom: 40px; }
+    .case-study-modal { padding: 28px 20px; }
+    .cs-arch-item { padding-left: 38px; }
+    /* .case-study-body sizing/spacing lives in the mobile performance block at the end. */
+}
+
+/* Same guard the project grid uses: below ~348px of usable width a minmax(300px,…)
+   track would overflow, so pin to a single column outright. */
+@media (max-width: 479px) {
+    .anatomy-grid { grid-template-columns: 1fr; }
+    .anatomy-card { padding: 24px; }
+}
+
+/* ============================================================
+   Mobile performance + touch targets
+   ============================================================ */
+/* backdrop-filter is the expensive part of the glass look — a full-frame blur+saturate
+   recomputed every frame the element (or anything under it) moves. One or two are fine;
+   ~30 project cards plus the modals plus the mobile menu is what makes scrolling stutter
+   on a phone GPU. Below 768px the blur is dropped and each surface falls back to a near
+   opaque panel — same visual language (dark, bordered, sits above the scene), a fraction
+   of the cost. Kept for tablet/desktop where the budget is there. */
+@media (max-width: 767px) {
+    .project-card,
+    .project-card:hover,
+    .anatomy-card,
+    .project-filter-bar {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        background: rgba(13, 13, 13, 0.92);
+    }
+
+    .contact-modal {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        background: rgba(12, 11, 10, 0.97);
+        /* Finite (one contact modal, one case-study modal) and animates transform on every
+           open/close, so a standing compositor-layer hint is worth it here — unlike the
+           cards, where hinting 30 elements would just trade blur cost for layer-memory
+           cost. No transform:translateZ() shortcut because .contact-modal already animates
+           its own transform and a flat override would kill the entrance. */
+        will-change: transform;
+    }
+
+    .mobile-menu-panel {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        background: rgba(9, 8, 7, 0.98);
+        will-change: transform;
+    }
+
+    .modal-overlay {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        background: rgba(0, 0, 0, 0.82);
+    }
+
+    /* The flagship card's rim ember is a conic-gradient repainting on an 8s infinite loop —
+       cheap on desktop, another always-on GPU job on mobile. Freeze it to a static edge,
+       matching what prefers-reduced-motion already does. */
+    .project-card-flagship::before { animation: none; }
+
+    /* Bigger close-button hit area (WCAG 2.5.5 target size) and no body overhang beneath it. */
+    .modal-close { width: 44px; height: 44px; top: 16px; right: 16px; }
+    .case-study-body { margin-right: 0; padding-right: 4px; max-height: 72vh; }
+    .case-study-body .modal-title { padding-right: 52px; }
 }
