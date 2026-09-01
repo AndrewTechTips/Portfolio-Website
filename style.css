@@ -93,8 +93,11 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
     transform: translate(-50%, -50%);
     pointer-events: none;
     z-index: 9998;
-    transition: width 0.3s, height 0.3s, background 0.3s;
+    transition: width 0.3s, height 0.3s, background 0.3s, opacity 0.25s ease;
 }
+/* Render loop paused (scrolled past the hero) — the ring can't lerp, so retire it and leave
+   just the inner dot, which tracks the pointer independently. */
+html.loop-paused .cursor-outer { opacity: 0; }
 
 /* ---- Cinematic overlay layer ---- */
 .cinematic-container {
@@ -1324,12 +1327,16 @@ button.project-btn { border: none; cursor: pointer; font-family: 'Outfit', sans-
 }
 
 /* ============================================================
-   Fast path — "Skip 3D" button + the static state it engages
+   Fast path — "Skip 3D" button
    ============================================================ */
-/* A slim, quiet glass pill just under the header rule. It carries the same molten-amber ->
-   rim-blue hairline as the mobile menu panel and the flagship card, so it reads as part of
-   the forge palette rather than a bolted-on control. Enters after first paint (JS adds
-   .is-ready); the magnetic-pull vars feed its centring transform via calc(). */
+/* A slim, quiet glass pill just under the header rule, carrying the same molten-amber ->
+   rim-blue hairline as the mobile menu panel and the flagship card. It only smooth-scrolls
+   to the work grid — nothing is torn down. Three states:
+     - base            hidden before first paint
+     - .is-ready       faded in (JS adds it ~700ms after load)
+     - .is-hidden      faded back out once the hero is scrolled out of view (hero-visibility
+                       observer in main.js); wins over .is-ready via source order.
+   The magnetic-pull vars feed its centring transform via calc(). */
 .fast-path-btn {
     position: fixed;
     top: 80px;
@@ -1349,14 +1356,21 @@ button.project-btn { border: none; cursor: pointer; font-family: 'Outfit', sans-
     font-family: 'Outfit', sans-serif;
     overflow: hidden;
     opacity: 0;
+    pointer-events: none;
     transform: translate(calc(-50% + var(--magnet-x, 0px)), calc(-14px + var(--magnet-y, 0px)));
-    transition: opacity 0.5s ease,
+    transition: opacity 0.45s ease,
                 transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
                 border-color 0.3s ease, background 0.3s ease;
 }
 .fast-path-btn.is-ready {
     opacity: 1;
+    pointer-events: auto;
     transform: translate(calc(-50% + var(--magnet-x, 0px)), var(--magnet-y, 0px));
+}
+.fast-path-btn.is-hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(calc(-50% + var(--magnet-x, 0px)), calc(-14px + var(--magnet-y, 0px)));
 }
 .fast-path-btn::before {
     content: '';
@@ -1394,54 +1408,22 @@ button.project-btn { border: none; cursor: pointer; font-family: 'Outfit', sans-
     color: rgba(255, 220, 180, 0.95);
 }
 
-/* ---- Engaged state: html.fast-path ---- */
-/* Everything tied to the cinematic hero is removed from the page, the scroll-jack spacer is
-   collapsed (its height is also zeroed via --hero-scroll-vh in JS), and the header shrinks to
-   a plain band at the top of normal document flow. What's left: brand + social + Contact,
-   the work grid, and the anatomy section. */
-html.fast-path #webgl,
-html.fast-path .grid-lines,
-html.fast-path .grid-horizontal-line,
-html.fast-path .model-loader,
-html.fast-path .reveal-tint,
-html.fast-path .slide,
-html.fast-path .slide-image-mask,
-html.fast-path .story-dashes,
-html.fast-path .header-nav,
-html.fast-path .nav-dot,
-html.fast-path .menu-toggle,
-html.fast-path .cursor-inner,
-html.fast-path .cursor-outer,
-html.fast-path .fast-path-btn {
-    display: none !important;
-}
-html.fast-path .hero-scroll-spacer { display: none; }
-html.fast-path .cinematic-container {
-    position: absolute;
-    height: auto;
-    min-height: 0;
-    padding-bottom: 0;
-    background: #000000;
-    z-index: 30;   /* above .project-section (15) so its opaque bg can't cover the header */
-    opacity: 1 !important;   /* clears any inline opacity the render loop had set mid-transition */
-}
-html.fast-path.has-fine-pointer,
-html.fast-path.has-fine-pointer * {
-    cursor: auto !important;
-}
-#work:focus { outline: none; }   /* programmatic focus target after the fast-path jump */
+#work:focus { outline: none; }   /* programmatic focus target after the "Skip 3D" scroll */
 
 /* ============================================================
    Reduced motion
    ============================================================ */
-/* The site auto-engages the fast path under this query (see setupFastPath), which removes the
-   button and the tilt/glare entirely — these rules are the safety net if that JS never runs. */
+/* JS also skips the scroll-jacked intro under this query (see setupFastPath); these rules
+   strip the remaining transform-based motion — the fast-path button's slide, the magnetic
+   pull, and the card tilt/glare — down to plain opacity. */
 @media (prefers-reduced-motion: reduce) {
-    .fast-path-btn {
-        opacity: 1;
+    .fast-path-btn,
+    .fast-path-btn.is-ready,
+    .fast-path-btn.is-hidden {
         transform: translate(-50%, 0);
-        transition: none;
+        transition: opacity 0.2s linear;
     }
+    .fast-path-btn__arrow { transition: none; }
     .contact-btn, .project-btn, .filter-btn, .modal-close {
         transform: none;
         transition: background 0.3s, border-color 0.3s, color 0.3s;
@@ -1455,5 +1437,4 @@ html.fast-path.has-fine-pointer * {
         transition: opacity 0.4s ease, border-color 0.4s, background 0.4s, box-shadow 0.4s;
     }
     .project-card__glare { display: none; }
-    .fast-path-btn__arrow { transition: none; }
 }

@@ -1,33 +1,22 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
-// Post-processing pipeline. Imported by relative path rather than through the import map
-// (unlike the three specifiers above) on purpose: the import map is pinned byte-for-byte by
-// a CSP script-src hash (see the comment block in index.html), and adding entries would mean
-// recomputing that hash. These files are the unmodified r185 addons — they resolve their own
-// `from 'three'` imports through the existing map entry. Vendored, same as the rest of three.
-import { EffectComposer } from './vendor/three/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from './vendor/three/examples/jsm/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from './vendor/three/examples/jsm/postprocessing/UnrealBloomPass.js';
-import { OutputPass } from './vendor/three/examples/jsm/postprocessing/OutputPass.js';
 
 const canvas = document.querySelector('#webgl');
 let scene, camera, renderer;
-let composer;          // EffectComposer — only built when bloom is enabled for this device
-let bloomPass;         // UnrealBloomPass handle, kept for resize + runtime disable
-let bloomActive = false;   // true only while the composited path is the one being rendered
 let gltfModel;     // the statue
 let modelPivot;    // pivot group for perfect center-rotation
 let mixer;
 let rafId = 0;
-let renderLoopActive = true;   // flipped off by the fast-path / reduced-motion switch
-let fastPathEngaged = false;   // "Skip 3D" clicked, or reduced motion honoured at load
+let renderLoopActive = true;   // paused by the hero-visibility IntersectionObserver
 
-// Honoured at load (auto-engages the fast path) and set by the "Skip 3D" button. Once true,
-// the heavy render loop is torn down and never restarted for the life of the page.
+// OS-level "reduce motion" preference, read once at load. When set: scrolls are instant
+// instead of smooth, the magnetic/tilt pointer effects are inert, and the scroll-jacked
+// cinematic intro is skipped (setupFastPath lands the reader at the grid).
+// Nothing here is destructive — the hero scene stays mounted and works if scrolled back to.
 const prefersReducedMotion =
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-let reducedMotion = prefersReducedMotion;
+const reducedMotion = prefersReducedMotion;
 // THREE.Clock is deprecated in this build (r185: "THREE.Clock: This module has been
 // deprecated. Please use THREE.Timer instead."). Timer ships in the vendored core bundle,
 // so no extra file/import-map entry is needed. API differs slightly: call update() once per
@@ -75,24 +64,7 @@ const QUALITY = {
     // mobile keeps the visual state tied much more closely to the real, already-settled scroll
     // position.
     scrollLerpSpeed: isMobile ? 0.09 : 0.025,
-    revealLerpSpeed: isMobile ? 0.12 : 0.04,
-
-    // ---- Bloom post-processing ----
-    // UnrealBloomPass rebuilds a 5-mip Gaussian pyramid every frame — comfortably the most
-    // expensive thing in the loop. It is gated three ways:
-    //   1. bloomEnabled: off on phones outright (same call as shadows/high DPR above), and
-    //      forced off at runtime if the GL context reports a software rasteriser.
-    //   2. bloomResolutionScale: even on desktop the pyramid runs at a fraction of the
-    //      framebuffer, so the blur is ~1/4 the pixels it would otherwise touch.
-    //   3. a frame-time watchdog in animate() drops it permanently if a real device still
-    //      can't hold the target frame rate with it on.
-    bloomEnabled: !isMobile,
-    bloomResolutionScale: isMobile ? 0.5 : 0.66,
-    bloomStrength: isMobile ? 0.45 : 0.7,
-    bloomRadius: 0.35,
-    // Luminance gate. The bronze base metal tone-maps below this; spark cores, the rim-light
-    // hotspot and the shader's specular crests sit above it, so only those actually glow.
-    bloomThreshold: 0.6
+    revealLerpSpeed: isMobile ? 0.12 : 0.04
 };
 
 // ---- Scroll model constants ----
@@ -417,11 +389,6 @@ function updateModelLoaderProgress(fraction) {
 function hideModelLoader() {
     const loader = document.getElementById('model-loader');
     if (loader) loader.classList.add('hidden');
-    // Arm the frame-time watchdog a beat after the scene is fully present — shader compiles
-    // and the model decode cause a one-off hitch that must not be read as a slow device.
-    if (bloomActive && bloomWatchStartAt === 0) {
-        bloomWatchStartAt = performance.now() + 1500;
-    }
 }
 
 // Shown only if the model genuinely fails to fetch/parse — the rest of the page (nav, hero
@@ -459,8 +426,14 @@ function initScene() {
 
     renderer.shadowMap.enabled = QUALITY.shadowsEnabled;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    // Native rendering path — no EffectComposer. The premium metallic look comes purely from
+    // the lighting rig + these two settings: ACES filmic tone mapping rolls the specular
+    // highlights off cinematically instead of clipping, and the sRGB output color space
+    // gamma-corrects the final image. Nothing blurs or blooms the frame; every pixel the
+    // renderer produces goes straight to the canvas, so the bronze stays crisp and sharp.
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 2.2;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     const ambientLight = new THREE.AmbientLight('#ffffff', 0.1);
     scene.add(ambientLight);
@@ -490,108 +463,6 @@ function initScene() {
 
     createSparks();
     loadModel();
-    initPostProcessing();
-}
-
-// ---- Bloom post-processing ----
-// EffectComposer( RenderPass -> UnrealBloomPass -> OutputPass ). RenderPass draws the scene
-// into a linear HDR (HalfFloat) buffer with tone mapping deferred; UnrealBloomPass extracts
-// everything above QUALITY.bloomThreshold and adds back a multi-radius blur of it; OutputPass
-// applies the renderer's ACES tone map + sRGB conversion at the very end, so the on-screen
-// result matches the plain renderer.render() path plus the glow. Built once, only when the
-// device tier allows it — otherwise the loop stays on the plain path and none of this loads
-// any GPU memory.
-function initPostProcessing() {
-    if (reducedMotion) return;                 // fast path already engaged, or user opted out
-    if (!QUALITY.bloomEnabled) return;
-    if (rendererUsesSoftwareGL()) {
-        QUALITY.bloomEnabled = false;
-        console.info('[bloom] software WebGL detected — staying on the plain render path');
-        return;
-    }
-
-    composer = new EffectComposer(renderer);
-    composer.setPixelRatio(renderer.getPixelRatio());
-    composer.setSize(sizes.width, sizes.height);
-    composer.addPass(new RenderPass(scene, camera));
-
-    bloomPass = new UnrealBloomPass(
-        new THREE.Vector2(sizes.width, sizes.height),
-        QUALITY.bloomStrength,
-        QUALITY.bloomRadius,
-        QUALITY.bloomThreshold
-    );
-    composer.addPass(bloomPass);
-    composer.addPass(new OutputPass());
-
-    applyBloomResolution();
-    bloomActive = true;
-    bloomWatchStartAt = 0;   // (re)armed once the model has loaded, see animate()
-}
-
-// UnrealBloomPass sizes its mip pyramid from the composer's full effective resolution on
-// addPass()/setSize(). Re-clamp it to a fraction of that so the blur — the costly part —
-// runs at far fewer pixels. Called at init and after every composer.setSize().
-function applyBloomResolution() {
-    if (!bloomPass) return;
-    const s = QUALITY.bloomResolutionScale;
-    bloomPass.setSize(Math.max(1, sizes.width * s), Math.max(1, sizes.height * s));
-}
-
-function syncComposerSize() {
-    if (!composer) return;
-    composer.setPixelRatio(renderer.getPixelRatio());
-    composer.setSize(sizes.width, sizes.height);
-    applyBloomResolution();
-}
-
-// One-way: tears down the composited path and its GPU buffers, and the loop falls back to
-// renderer.render(). Used by the frame-time watchdog and by the fast-path switch.
-function disableBloom(reason) {
-    if (!composer && !bloomPass) { bloomActive = false; return; }
-    bloomActive = false;
-    if (bloomPass) { bloomPass.dispose(); bloomPass = null; }
-    if (composer) { composer.dispose(); composer = null; }
-    if (reason) console.info(`[bloom] disabled — ${reason}`);
-}
-
-function rendererUsesSoftwareGL() {
-    try {
-        const gl = renderer.getContext();
-        const ext = gl.getExtension('WEBGL_debug_renderer_info');
-        if (!ext) return false;
-        const name = String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) || '');
-        return /swiftshader|llvmpipe|software|basic render|microsoft basic/i.test(name);
-    } catch {
-        return false;
-    }
-}
-
-// ---- Frame-time watchdog ----
-// Cheap insurance for devices that slip past the isMobile / software-GL gates: sample real
-// throughput in fixed windows and, if the composited loop can't sustain the floor, drop
-// bloom for good. Only ever downgrades, never re-enables.
-const BLOOM_MIN_FPS = 45;
-const BLOOM_WATCH_WINDOW_MS = 2000;
-let bloomWatchStartAt = 0;   // 0 until armed; set to a timestamp after the model loads
-let fpsWindowStart = 0;
-let fpsWindowFrames = 0;
-function bloomWatchdogTick(now) {
-    if (!bloomActive || bloomWatchStartAt === 0 || now < bloomWatchStartAt) return;
-    if (document.hidden) { fpsWindowStart = 0; return; }   // backgrounded — rAF is paused, not slow
-    if (fpsWindowStart === 0) { fpsWindowStart = now; fpsWindowFrames = 0; return; }
-    fpsWindowFrames++;
-    const elapsed = now - fpsWindowStart;
-    if (elapsed < BLOOM_WATCH_WINDOW_MS) return;
-    // A window that ran long overshot because rAF was throttled (tab refocus, sleep/wake),
-    // not because the GPU is slow — a genuine low-FPS window still lands close to 2s. Restart.
-    if (elapsed > BLOOM_WATCH_WINDOW_MS * 2) { fpsWindowStart = now; fpsWindowFrames = 0; return; }
-    const fps = (fpsWindowFrames / elapsed) * 1000;
-    fpsWindowStart = now;
-    fpsWindowFrames = 0;
-    if (fps < BLOOM_MIN_FPS) {
-        disableBloom(`sustained ${fps.toFixed(1)}fps below the ${BLOOM_MIN_FPS}fps floor`);
-    }
 }
 
 function onWindowResize({ recalcHeroLength = true } = {}) {
@@ -605,7 +476,6 @@ function onWindowResize({ recalcHeroLength = true } = {}) {
         renderer.setSize(sizes.width, sizes.height);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, QUALITY.maxDpr));
     }
-    syncComposerSize();
     if (shaderUniforms) shaderUniforms.uResolution.value.set(sizes.width, sizes.height);
 
     // Only recompute the hero's scroll distance (8-9 viewport-heights tall) on a real layout
@@ -614,7 +484,7 @@ function onWindowResize({ recalcHeroLength = true } = {}) {
     // different innerHeight while the user is mid-scroll. Recalculating this spacer's height
     // under the user's feet mid-gesture rewrote the document's scrollable length while they
     // were actively scrolling through it, producing a visible jump/flash partway through.
-    if (recalcHeroLength && !fastPathEngaged) {
+    if (recalcHeroLength) {
         heroScrollLength = window.innerHeight * QUALITY.heroVhMultiplier;
         document.documentElement.style.setProperty('--hero-scroll-vh', `${heroScrollLength}px`);
     }
@@ -698,7 +568,7 @@ function splitTitlesIntoChars() {
 }
 
 function animate() {
-    if (!renderLoopActive) return;         // fast path / reduced motion: stop scheduling
+    if (!renderLoopActive) return;         // paused: hero scrolled out of view
     rafId = requestAnimationFrame(animate);
     timer.update();                       // sample the frame clock once
     const deltaTime = timer.getDelta();
@@ -804,12 +674,7 @@ function animate() {
     updateSlides(currentScroll, revealProgress, targetHeroProgress);
     updateGridDots(currentScroll);
 
-    if (bloomActive && composer) {
-        composer.render(deltaTime);
-    } else {
-        renderer.render(scene, camera);
-    }
-    bloomWatchdogTick(performance.now());
+    renderer.render(scene, camera);
 }
 
 function updateGridDots(scroll) {
@@ -891,18 +756,6 @@ function setupNavigation() {
         link.addEventListener('click', (e) => {
             e.preventDefault();
 
-            // Fast path / reduced motion: the hero scroll spacer is collapsed to zero, so the
-            // fraction math below all resolves to y=0. Fall back to plain anchor navigation —
-            // this keeps the skip link and the "Work" nav item pointing somewhere real.
-            if (reducedMotion || heroScrollLength === 0) {
-                const href = link.getAttribute('href') || '';
-                const dest = href.length > 1 ? document.querySelector(href) : null;
-                (dest || document.getElementById('work'))
-                    ?.scrollIntoView({ behavior: 'auto', block: 'start' });
-                closeMobileMenu();
-                return;
-            }
-
             const fraction = parseFloat(link.dataset.targetFraction);
             const targetY = heroScrollLength * fraction;
 
@@ -931,7 +784,7 @@ function setupNavigation() {
                 currentScroll = 1;
             }
 
-            window.scrollTo({ top: targetY, behavior: 'smooth' });
+            window.scrollTo({ top: targetY, behavior: reducedMotion ? 'auto' : 'smooth' });
             closeMobileMenu();
         });
     });
@@ -1457,72 +1310,84 @@ function setupCaseStudyModal() {
 }
 
 // ============================================================
-// Fast path — "Skip 3D"
+// Fast path — "Skip 3D"  +  hero-visibility gate
 // ============================================================
-// One-way switch to a plain, static portfolio: tears the WebGL loop down (Reduced Motion),
-// collapses the 9-viewport scroll-jack spacer to zero, and drops the reader at the work grid.
-// Engaged by the header button, and automatically when the OS asks for reduced motion.
-
-function stopRenderLoop() {
-    renderLoopActive = false;
-    if (rafId) cancelAnimationFrame(rafId);
-    rafId = 0;
-    disableBloom();                         // frees the bloom mip-chain render targets
-    if (renderer) renderer.dispose();
-}
+// The button only smooth-scrolls to the work grid — nothing is torn down, so scrolling back
+// up to the hero always works. Performance instead comes from a single IntersectionObserver
+// on the hero's scroll-spacer: while the hero region is off-screen the rAF loop is paused
+// (renderer + WebGL context stay alive) and the button fades away; both come back the moment
+// the hero re-enters the viewport.
 
 function revealAllProjectCards() {
     document.querySelectorAll('.project-card:not(.in-view)')
         .forEach(card => card.classList.add('in-view'));
 }
 
-function activateFastPath({ jump = true } = {}) {
-    if (fastPathEngaged) return;
-    fastPathEngaged = true;
-    reducedMotion = true;
+function pauseLoop() {
+    if (!renderLoopActive) return;
+    renderLoopActive = false;
+    if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
+    // The outer cursor ring is lerped toward the pointer inside animate(); with the loop
+    // stopped it would strand wherever it was. Hide it (the inner dot still tracks live via
+    // the mousemove handler) until the loop resumes over the hero.
+    document.documentElement.classList.add('loop-paused');
+}
 
-    document.documentElement.classList.add('fast-path');
-    // Zero the scroll-jack: the spacer's height is driven by this custom property, and
-    // animate() reads heroScrollLength for its own progress math.
-    document.documentElement.style.setProperty('--hero-scroll-vh', '0px');
-    heroScrollLength = 0;
+function resumeLoop() {
+    if (renderLoopActive) return;
+    renderLoopActive = true;
+    document.documentElement.classList.remove('loop-paused');
+    // Consume the paused gap so the first resumed frame's delta isn't a multi-second spike
+    // (which would fling the spark sim and jump the model's animation clip).
+    timer.update();
+    rafId = requestAnimationFrame(animate);
+}
 
-    stopRenderLoop();
-    // The canvas keeps its last painted frame around after the context is torn down; the
-    // .fast-path rules hide it, but clear any leftover blur filter for safety.
-    if (canvas) canvas.style.filter = 'none';
-
-    revealAllProjectCards();
-
-    if (jump) {
-        const work = document.getElementById('work');
-        if (work) {
-            work.scrollIntoView({ behavior: 'auto', block: 'start' });
-            // Land keyboard focus in the grid rather than leaving it on the now-hidden button.
-            work.focus({ preventScroll: true });
-        }
-    } else {
-        window.scrollTo(0, 0);
-    }
+function skipToWork() {
+    const work = document.getElementById('work');
+    if (!work) return;
+    work.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
+    // Move focus into the grid for keyboard users, without a second scroll jump.
+    work.focus({ preventScroll: true });
 }
 
 function setupFastPath() {
     const btn = document.getElementById('fast-path-btn');
     if (!btn) return;
 
+    btn.addEventListener('click', skipToWork);
+    // Fades in a beat after load so it never competes with first paint. Plain timer, not rAF
+    // — a throttled/backgrounded tab would otherwise never reveal it.
+    setTimeout(() => btn.classList.add('is-ready'), reducedMotion ? 0 : 700);
+
     if (reducedMotion) {
-        // OS-level reduced motion: engage immediately, but don't yank the viewport down —
-        // just present the static page from the top.
-        activateFastPath({ jump: false });
-        return;
+        // OS asked for reduced motion: skip the scroll-jacked cinematic intro by landing at
+        // the work grid (instant, and no focus steal on load). Everything stays mounted — the
+        // observer below pauses the loop while we're down here, and scrolling back up to the
+        // hero restores it.
+        document.getElementById('work')?.scrollIntoView({ block: 'start' });
     }
+}
 
-    btn.addEventListener('click', () => activateFastPath({ jump: true }));
+// Pauses/resumes the render loop and shows/hides the fast-path button based on whether the
+// hero's scroll region is anywhere in the viewport. The spacer spans exactly the hero's
+// scroll footprint, so "spacer not intersecting" == "fully scrolled into the work grid".
+function setupHeroVisibilityGate() {
+    const spacer = document.querySelector('.hero-scroll-spacer');
+    const btn = document.getElementById('fast-path-btn');
+    if (!spacer) return;
 
-    // Slides up into place a beat after load so it never competes with first paint. Plain
-    // timer, not rAF — a backgrounded / battery-saver tab throttles rAF indefinitely and the
-    // button must still become usable.
-    setTimeout(() => btn.classList.add('is-ready'), 700);
+    const io = new IntersectionObserver(([entry]) => {
+        if (entry.isIntersecting) {
+            resumeLoop();
+            if (btn) btn.classList.remove('is-hidden');
+        } else {
+            pauseLoop();
+            if (btn) btn.classList.add('is-hidden');
+        }
+    }, { rootMargin: '150px 0px 0px 0px' });   // resume/reveal slightly before the hero is back
+
+    io.observe(spacer);
 }
 
 // ============================================================
@@ -1623,7 +1488,8 @@ window.addEventListener('DOMContentLoaded', async () => {
     setupMobileMenu();
     setupContactModal();
     setupCaseStudyModal();
-    setupFastPath();   // may immediately tear the loop back down for reduced-motion users
+    setupFastPath();
+    setupHeroVisibilityGate();   // pauses the loop + hides the button once past the hero
     bindMagneticButtons();
     setupCardTilt();
 
