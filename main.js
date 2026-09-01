@@ -330,6 +330,7 @@ function loadModel() {
                     if (child.material) {
                         child.material.roughness = 0.42;   // semi-matte, noble highlights
                         child.material.metalness = 0.92;   // high satin-bronze metallic sheen
+                        child.material.envMapIntensity = 0.6;   // soft IBL from createEnvironment()
                         child.material.flatShading = false;
                         if (child.material.map) {
                             child.material.map.anisotropy = isMobile ? 4 : 16;
@@ -404,6 +405,53 @@ function showModelLoaderError() {
     }
 }
 
+// ---- Image-based lighting ----
+// A small procedural "studio" environment: a canvas-painted equirectangular gradient (near-
+// black floor -> warm horizon sweep -> cool ceiling, plus one soft off-axis glint) baked once
+// through PMREMGenerator at startup. scene.environment feeds reflections to every
+// MeshStandardMaterial in the scene — here that's only the bronze horse (the sparks are
+// Points, the backdrop is a raw ShaderMaterial). The result is a static prefiltered cube map
+// sampled in the material shader like any other texture: zero per-frame cost, nothing like the
+// EffectComposer that was removed. Without it a metalness-0.92 surface reflects pure black
+// everywhere a direct light doesn't strike it and reads as dark plastic; with it the shaded
+// areas pick up soft reflective detail and the metal looks forged. Per-material
+// envMapIntensity (see loadModel) scales the contribution.
+function createEnvironment() {
+    const c = document.createElement('canvas');
+    c.width = 512;
+    c.height = 256;
+    const ctx = c.getContext('2d');
+
+    // Vertical base gradient — floor up to ceiling. The bright warm band near the middle is
+    // the "horizon" the metal catches as a broad specular sweep.
+    const g = ctx.createLinearGradient(0, 0, 0, 256);
+    g.addColorStop(0.00, '#26242c');   // ceiling — cool neutral
+    g.addColorStop(0.42, '#4a4650');   // upper wall
+    g.addColorStop(0.55, '#9a8672');   // horizon — warm reflective sweep
+    g.addColorStop(0.70, '#2a2320');   // lower wall
+    g.addColorStop(1.00, '#0b0a09');   // floor — near black
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 512, 256);
+
+    // One soft warm glint, off-centre, so the orbiting camera sees a highlight travel across
+    // the bronze rather than a static, uniform sheen.
+    const blob = ctx.createRadialGradient(360, 80, 0, 360, 80, 150);
+    blob.addColorStop(0, 'rgba(232, 212, 188, 0.55)');
+    blob.addColorStop(1, 'rgba(232, 212, 188, 0)');
+    ctx.fillStyle = blob;
+    ctx.fillRect(0, 0, 512, 256);
+
+    const equirect = new THREE.CanvasTexture(c);
+    equirect.colorSpace = THREE.SRGBColorSpace;
+    equirect.mapping = THREE.EquirectangularReflectionMapping;
+
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromEquirectangular(equirect).texture;
+
+    equirect.dispose();
+    pmrem.dispose();
+}
+
 function initScene() {
     scene = new THREE.Scene();
     scene.background = new THREE.Color('#000000');
@@ -434,6 +482,8 @@ function initScene() {
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 2.2;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+    createEnvironment();   // scene.environment — soft IBL reflections for the metal
 
     const ambientLight = new THREE.AmbientLight('#ffffff', 0.1);
     scene.add(ambientLight);
