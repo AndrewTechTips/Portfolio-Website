@@ -50,6 +50,8 @@ than pulled from a CDN (see [Engineering notes](#engineering-notes)).
 **Project showcase**
 - Fully data-driven from `projects.json` — add one object, get a new card, no HTML/JS edits
 - Featured / Other split, with "Other Projects" paginated behind a "Show More" toggle
+- Two headline tiers (`flagship` / `spotlight`) with a travelling rim ember and an in-modal case
+  study, both driven entirely from `projects.json`
 - Auto-generated language filter bar (adding a project with a new language adds its filter)
 - Self-hosted tech-stack icons per card, with an automatic fallback icon for anything new
 
@@ -158,6 +160,14 @@ Append one object to `projects.json` — nothing else needs to change:
 ```
 
 - `featured: true` pins a project to the always-visible "Featured Work" section.
+- `flagship: true` and `spotlight: true` are the two headline tiers above it — one project each.
+  They get a lit rim instead of a plain border (amber for the flagship, rim-light blue for the
+  spotlight), the case study's own tagline as a lead line on the card, and the self-drawing
+  architecture diagram inside their case study. Colour is the only difference between them: both
+  read their palette from `.tier-flagship` / `.tier-spotlight` in `style.css`, so a third tier is
+  a block of custom properties, not another copy of the treatment.
+- `caseStudy` is optional; a project carrying one gets a "Case Study" button and a modal built
+  from `tagline` / `problem` / `architecture` / `decisions` / `status`.
 - `priority` orders everything else (lower = earlier); omit it and the project just sorts last.
 - `tech[].type` of `"language"` automatically gets a filter button in the filter bar; anything
   else renders as a plain tech pill.

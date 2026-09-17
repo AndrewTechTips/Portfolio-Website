@@ -833,96 +833,169 @@ html.motion-off .project-card.cmdk-jump-highlight { animation: none; outline: 2p
     border-radius: 20px;
 }
 
-/* ---- Flagship card ---- */
-/* Exactly one card in the grid carries `flagship: true` (see buildProjectCard
-   in main.js) — the deployed, Play-Store-bound project. "Iron Log" and the
-   site's own palette are a forge: molten amber (#ffb347) cooling to rim-light
-   blue. So the treatment is a single ember of heat travelling the card's rim on
-   a slow 8s loop over a dim amber<->blue hairline, plus a low warm glow lifting
-   it off the black. One moving element, nothing else; frozen to a static
-   gradient edge under prefers-reduced-motion, and to a solid warm border where
-   mask-composite is unsupported. Scoped wholly to .project-card-flagship — no
-   other card, and no layout, is touched. */
-@property --flagship-rim-angle {
+/* ---- Headline cards: flagship + spotlight ---- */
+/* Two cards carry the headline work (see buildProjectCard in main.js): `flagship: true` is the
+   deployed, Play-Store-bound project, `spotlight: true` is the full-stack one beside it. This
+   site's palette is a forge — molten amber (#ffb347) cooling to rim-light blue (#78beff) — so
+   the pair takes one end of it each: the flagship burns amber, the spotlight cools to blue.
+   Everything about the treatment is shared and lives on .project-card-major: a single ember of
+   heat travelling the card's rim on a slow loop over a dim hairline, plus a low glow lifting the
+   card off the black. One moving element per card, nothing else. Each tier only supplies colour,
+   as custom properties on .tier-flagship / .tier-spotlight — so a third tier would be a block of
+   variables, not a second copy of the mechanism. The card and its case-study modal both wear the
+   tier class, which is why the variables sit on a class of their own rather than on the card:
+   custom properties inherit, so the modal's badge and standfirst pick up the same palette without
+   a second set of rules naming each tier again. Frozen to a static gradient edge under
+   prefers-reduced-motion, and to a solid border where mask-composite is unsupported. No other
+   card, and no layout, is touched. */
+@property --card-rim-angle {
     syntax: '<angle>';
     inherits: false;
     initial-value: 0deg;
 }
 
-.project-card-flagship {
+.tier-flagship {
+    --rim-edge: rgba(255, 199, 143, 0.55);
+    --rim-edge-hover: rgba(255, 199, 143, 0.8);
+    --rim-halo: rgba(255, 150, 60, 0.28);
+    --rim-halo-tight: rgba(255, 179, 71, 0.16);
+    --rim-halo-hover: rgba(255, 150, 60, 0.4);
+    --rim-halo-tight-hover: rgba(255, 179, 71, 0.24);
+    /* The travelling gradient: two dim hairline stops, then the bright ember and its tail. */
+    --rim-dim-a: rgba(255, 179, 71, 0.14);
+    --rim-dim-b: rgba(120, 190, 255, 0.12);
+    --rim-ember: rgba(255, 224, 189, 0.92);
+    --rim-ember-tail: rgba(120, 190, 255, 0.45);
+    --rim-badge: linear-gradient(135deg, #ffe9cf, #ff9d3d);
+    --rim-badge-ink: #1a1200;
+    --rim-badge-glow: rgba(255, 157, 61, 0.45);
+    --rim-lead: #ffd9a8;
+}
+
+.tier-spotlight {
+    --rim-edge: rgba(151, 205, 255, 0.5);
+    --rim-edge-hover: rgba(173, 217, 255, 0.78);
+    --rim-halo: rgba(70, 148, 255, 0.24);
+    --rim-halo-tight: rgba(120, 190, 255, 0.16);
+    --rim-halo-hover: rgba(70, 148, 255, 0.36);
+    --rim-halo-tight-hover: rgba(120, 190, 255, 0.24);
+    --rim-dim-a: rgba(120, 190, 255, 0.14);
+    --rim-dim-b: rgba(255, 179, 71, 0.1);
+    --rim-ember: rgba(226, 242, 255, 0.92);
+    --rim-ember-tail: rgba(255, 179, 71, 0.38);
+    --rim-badge: linear-gradient(135deg, #e6f3ff, #6fb6f5);
+    --rim-badge-ink: #041826;
+    --rim-badge-glow: rgba(111, 182, 245, 0.45);
+    --rim-lead: #c6e3ff;
+}
+
+.project-card-major {
     /* Fallback edge for engines without mask-composite (overridden just below). */
-    border-color: rgba(255, 199, 143, 0.55);
-    box-shadow: 0 20px 55px -18px rgba(255, 150, 60, 0.28),
-                0 0 34px -10px rgba(255, 179, 71, 0.16);
+    border-color: var(--rim-edge);
+    box-shadow: 0 20px 55px -18px var(--rim-halo),
+                0 0 34px -10px var(--rim-halo-tight);
     /* Mirrors .project-card: entrance on `translate`, tilt on `transform`. */
     transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
                 translate 0.9s cubic-bezier(0.16, 1, 0.3, 1),
                 transform 0.2s ease-out,
                 border-color 0.4s, background 0.4s, box-shadow 0.4s;
 }
-.project-card-flagship.is-tilting {
+.project-card-major.is-tilting {
     transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
                 translate 0.9s cubic-bezier(0.16, 1, 0.3, 1),
                 transform 0.08s linear,
                 border-color 0.4s, background 0.4s, box-shadow 0.4s;
 }
-.project-card-flagship:hover {
-    border-color: rgba(255, 199, 143, 0.8);
-    box-shadow: 0 24px 60px -16px rgba(255, 150, 60, 0.4),
-                0 0 46px -8px rgba(255, 179, 71, 0.24);
+.project-card-major:hover {
+    border-color: var(--rim-edge-hover);
+    box-shadow: 0 24px 60px -16px var(--rim-halo-hover),
+                0 0 46px -8px var(--rim-halo-tight-hover);
 }
-.project-card-flagship .featured-badge {
-    background: linear-gradient(135deg, #ffe9cf, #ff9d3d);
-    box-shadow: 0 0 18px rgba(255, 157, 61, 0.45);
+.project-card-major .featured-badge {
+    background: var(--rim-badge);
+    color: var(--rim-badge-ink);
+    box-shadow: 0 0 18px var(--rim-badge-glow);
+}
+
+/* The case study's own one-line hook, reused verbatim as the card's lead (see buildProjectCard).
+   Set in the italic serif the stylesheet already imports but never used anywhere else — it reads
+   as an editorial standfirst rather than a second paragraph, which is the whole job: it gives the
+   card a middle register between the display-serif title and the Outfit body copy, so the prose
+   below it stops being the only thing in the card. */
+.project-lead {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: 17px;
+    line-height: 1.45;
+    color: var(--rim-lead, #ffd9a8);
+    margin: -2px 0 18px;
+    text-wrap: pretty;
+}
+
+/* A short lit rule where the lead hands over to the paragraph — the one piece of structure
+   separating them, and it inherits the card's own tier colour rather than introducing another. */
+.project-card-major .project-desc {
+    position: relative;
+    padding-top: 18px;
+}
+.project-card-major .project-desc::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 56px;
+    height: 1px;
+    background: linear-gradient(90deg, var(--rim-edge), transparent);
 }
 
 @supports ((-webkit-mask-composite: xor) or (mask-composite: exclude)) {
-    .project-card-flagship,
-    .project-card-flagship:hover { border-color: transparent; }
+    .project-card-major,
+    .project-card-major:hover { border-color: transparent; }
 
     /* The rim: a conic gradient clipped to a 1px band by masking the content-box
        out of the padding-box, so it renders as a gradient *stroke* on the
        silhouette without a filled panel behind the glass. The bright wedge
-       (~amber -> near-white -> blue, ~300-336deg) is the ember; the rest is a
-       low-alpha amber<->blue hairline that just shimmers as the whole thing
-       turns. Only ever paints the outer 1px, so it never reaches the text. */
-    .project-card-flagship::before {
+       (~300-336deg) is the ember; the rest is a low-alpha hairline that just
+       shimmers as the whole thing turns. Only ever paints the outer 1px, so it
+       never reaches the text. */
+    .project-card-major::before {
         content: '';
         position: absolute;
         inset: -1px;
         border-radius: 19px;
         padding: 1px;
-        background: conic-gradient(from var(--flagship-rim-angle),
-            rgba(255, 179, 71, 0.14) 0deg,
-            rgba(120, 190, 255, 0.12) 130deg,
-            rgba(255, 179, 71, 0.14) 250deg,
-            rgba(255, 224, 189, 0.92) 300deg,
-            rgba(120, 190, 255, 0.45) 336deg,
-            rgba(255, 179, 71, 0.14) 360deg);
+        background: conic-gradient(from var(--card-rim-angle),
+            var(--rim-dim-a) 0deg,
+            var(--rim-dim-b) 130deg,
+            var(--rim-dim-a) 250deg,
+            var(--rim-ember) 300deg,
+            var(--rim-ember-tail) 336deg,
+            var(--rim-dim-a) 360deg);
         -webkit-mask: linear-gradient(#000 0 0) content-box,
                       linear-gradient(#000 0 0);
         -webkit-mask-composite: xor;
                 mask: linear-gradient(#000 0 0) content-box,
                       linear-gradient(#000 0 0);
                 mask-composite: exclude;
-        animation: flagship-rim 8s linear infinite;
+        animation: card-rim 8s linear infinite;
         pointer-events: none;
     }
 }
 
-@keyframes flagship-rim {
-    to { --flagship-rim-angle: 360deg; }
+@keyframes card-rim {
+    to { --card-rim-angle: 360deg; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .project-card-flagship::before { animation: none; }
+    .project-card-major::before { animation: none; }
 }
 /* Mirrors the rule above for the in-page "Toggle Motion" command palette action
    (html.motion-off, set by setMotionOverride() in main.js). A class can't be matched from
    inside an @media (prefers-reduced-motion) block, so an explicit, page-local override needs
    its own copy of the same rule — see the larger mirrored block near the end of this file for
    the rest of them, and why it's a deliberate duplication rather than an oversight. */
-html.motion-off .project-card-flagship::before { animation: none; }
+html.motion-off .project-card-major::before { animation: none; }
 
 .project-title {
     font-family: 'Italiana', serif;
@@ -1309,9 +1382,60 @@ html.motion-off .project-card-flagship::before { animation: none; }
     .contact-modal { padding: 28px; }
 }
 
+/* The work section carried one 60px horizontal padding at every width, and nothing overrode it
+   below 1024px. On a 375px phone that left 255px of card and — once the card's own 24px padding
+   came off both sides — 207px of text: a ~30-character measure, which turned the flagship's
+   paragraph into fifteen lines and the card into one tall thin column (measured, both before and
+   after: 726px of card holding 370px of paragraph, against 670px holding 245px now). Every other full-width
+   section on this page (the hero container, the anatomy section) already stepped its gutter down
+   at these breakpoints; this one was simply missed. The numbers below are the gutter each
+   breakpoint can afford, not a uniform shrink: the card's own padding comes down with it, since
+   at 375px the two are spending from the same 375px. */
+@media (max-width: 1023px) {
+    .project-section { padding: 120px 40px 130px; }
+}
+@media (max-width: 767px) {
+    .project-section { padding: 96px 24px 110px; }
+    .project-section-header { margin-bottom: 44px; }
+    .project-featured-section { margin-bottom: 56px; }
+    .project-card { padding: 26px 22px; }
+
+    /* Below ~40 characters a line, a 1.7 leading reads as gappy rather than airy, and every
+       extra line is another screenful of scroll. `pretty` is what stops the last line of a
+       paragraph landing as one orphaned word at this measure. */
+    .project-desc { font-size: 14px; line-height: 1.62; text-wrap: pretty; }
+    .project-title { font-size: 28px; }
+    .project-lead { font-size: 16px; }
+
+    /* 10px of vertical padding made these 33px tall — under the 44px WCAG 2.5.5 target, and they
+       are the only things on the card anyone taps. On the two headline cards the three actions
+       also stop wrapping 2-then-1 (which reads as an accident) and take a deliberate shape: the
+       case study full width because it is the primary action, Live and Source sharing the row
+       under it. `justify-content` is only needed once they are grid items being stretched. */
+    .project-btn {
+        min-height: 44px;
+        padding: 13px 20px;
+        justify-content: center;
+    }
+    .project-card-major .project-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+    .project-card-major .project-btn-casestudy { grid-column: 1 / -1; }
+}
+
+/* A width query alone misses a phone in landscape — 900px+ wide on a modern handset, and still
+   nothing but a fingertip to hit these with. The size is the only thing that follows the pointer;
+   the layout above stays keyed to width, because that is what it is actually about. */
+@media (pointer: coarse) {
+    .project-btn { min-height: 44px; padding: 13px 20px; }
+}
+
 /* <480px */
 @media (max-width: 479px) {
-    .project-card { padding: 24px; }
+    .project-section { padding: 84px 18px 96px; }
+    .project-card { padding: 24px 20px; }
     .project-grid { grid-template-columns: 1fr; }
 }
 
@@ -1339,12 +1463,23 @@ html.motion-off .project-card-flagship::before { animation: none; }
     padding-right: 44px; /* clears the absolutely-positioned close button on the first line */
 }
 .cs-tagline {
-    font-family: 'Outfit', sans-serif;
-    font-weight: 300;
-    font-size: 15px;
-    line-height: 1.6;
-    color: #ffd9a8;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: 17px;
+    line-height: 1.5;
+    color: var(--rim-lead, #ffd9a8);
     margin-bottom: 26px;
+    text-wrap: pretty;
+}
+
+/* The headline projects' modals carry .tier-flagship / .tier-spotlight (set in openCaseStudy),
+   so the badge that opens the case study matches the badge on the card that opened it. Every
+   other project inherits nothing and falls back to the original amber pill. */
+.case-study-body .featured-badge {
+    background: var(--rim-badge, linear-gradient(135deg, #ffe4b8, #ffb347));
+    color: var(--rim-badge-ink, #1a1200);
+    box-shadow: 0 0 18px var(--rim-badge-glow, transparent);
 }
 .cs-block { margin-bottom: 28px; }
 .cs-block:last-of-type { margin-bottom: 20px; }
@@ -1750,10 +1885,18 @@ button.project-btn { border: none; cursor: pointer; font-family: 'Outfit', sans-
         background: rgba(0, 0, 0, 0.82);
     }
 
-    /* The flagship card's rim ember is a conic-gradient repainting on an 8s infinite loop —
-       cheap on desktop, another always-on GPU job on mobile. Freeze it to a static edge,
-       matching what prefers-reduced-motion already does. */
-    .project-card-flagship::before { animation: none; }
+    /* The headline cards' rim ember used to be frozen here, on the same budget argument as the
+       blur above. It is back, because the argument does not transfer: the blur is ~30 cards each
+       re-blurring everything behind them every frame they scroll, while the ember is exactly two
+       elements repainting a 1px band — and it is the one thing on the page that says which two
+       projects matter. Checked rather than assumed before re-enabling: paired A/B scroll samples
+       at a 375px viewport, rim animating against rim frozen, three of each — median frame
+       interval identical and the spread inside the noise. That was a desktop machine at a phone
+       viewport, not a phone GPU, so it bounds the paint cost rather than proving it on hardware;
+       the reason to trust it on a handset is the count, two elements against thirty. Slowed to
+       11s here: the same travel over a shorter rim reads as faster, and this is the one width
+       where the card is the whole screen rather than a tile in a grid. */
+    .project-card-major::before { animation-duration: 11s; }
 
     /* Bigger close-button hit area (WCAG 2.5.5 target size) and no body overhang beneath it. */
     .modal-close { width: 44px; height: 44px; top: 16px; right: 16px; }
@@ -1875,7 +2018,7 @@ button.project-btn { border: none; cursor: pointer; font-family: 'Outfit', sans-
         translate: none;
         transition: opacity 0.4s ease, border-color 0.4s, background 0.4s;
     }
-    .project-card-flagship {
+    .project-card-major {
         transition: opacity 0.4s ease, border-color 0.4s, background 0.4s, box-shadow 0.4s;
     }
     .project-card__glare { display: none; }
@@ -1911,7 +2054,7 @@ html.motion-off .project-card {
     translate: none;
     transition: opacity 0.4s ease, border-color 0.4s, background 0.4s;
 }
-html.motion-off .project-card-flagship {
+html.motion-off .project-card-major {
     transition: opacity 0.4s ease, border-color 0.4s, background 0.4s, box-shadow 0.4s;
 }
 html.motion-off .project-card__glare { display: none; }

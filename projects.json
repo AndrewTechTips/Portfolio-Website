@@ -37,6 +37,43 @@
     }
   },
   {
+    "id": "commons",
+    "title": "Commons",
+    "description": "Commons is a small public square: anyone can read the feed, and an account gets you posting, commenting and upvoting. Because GitHub Pages has nowhere to run FastAPI, the published build answers its own API calls in the browser — and the same end-to-end suite runs against both that and the real backend, so the demo can't quietly drift from the thing it demonstrates. JWT auth with a refresh token JavaScript can't read, Postgres full-text search, 231 backend tests at 97% coverage, and no build step anywhere on the frontend.",
+    "tech": [
+      { "name": "python", "type": "language" },
+      { "name": "javascript", "type": "language" },
+      { "name": "fastapi", "type": "tool" },
+      { "name": "postgresql", "type": "tool" }
+    ],
+    "liveUrl": "https://andrewtechtips.github.io/social-feed-application/",
+    "sourceUrl": "https://github.com/AndrewTechTips/social-feed-application",
+    "featured": true,
+    "spotlight": true,
+    "priority": 1,
+    "caseStudy": {
+      "tagline": "A feed anyone can read, an API nobody can talk their way into — and a demo that can't drift from either.",
+      "problem": [
+        "A social feed is the CRUD app everyone writes, which is exactly why it is worth writing properly. The endpoints are the boring part. The interesting part is the rules underneath them: who is allowed to see an unpublished post, what a stolen token can still do, and whether a wrong password takes the same time to fail as an account that was never there.",
+        "There was a practical problem stacked on top of it. Portfolio work has to be clickable — but GitHub Pages serves static files and has nowhere to run FastAPI, and a live demo that opens on \"can't reach the server\" is worse than no link at all."
+      ],
+      "architecture": [
+        { "step": "Read is public, write is not", "detail": "An optional auth dependency keeps the feed readable with no token at all, while the same query quietly applies \"published, or yours\" — so a draft is an access rule rather than a label the interface paints on. Someone else's draft answers 404 instead of 403, because a 403 would confirm it exists." },
+        { "step": "Two tokens, one unreadable", "detail": "A 15-minute access token lives in a variable and goes out as a Bearer header. The 14-day refresh token lives in an httpOnly, SameSite cookie scoped to /auth, so no content route ever sees it and no script can copy it. Refreshing rotates both, with a short grace window — otherwise opening a second tab looks exactly like a stolen cookie." },
+        { "step": "Postgres does the searching", "detail": "Full-text search over title and body, so any form of a word finds every other form and a title match outranks a body match. The feed's one hot query — filter on published, sort by date — gets a composite index shaped for it, and counting votes gets its own, because the votes primary key cannot answer that question." },
+        { "step": "The demo is a third backend", "detail": "The published build reimplements the API in the browser against a seeded feed, so a static host still gets an app that posts, votes, searches and remembers you across a refresh. It says so on every visit, and one button puts it back." },
+        { "step": "One suite, both APIs", "detail": "The Playwright specs run twice — against a standard-library mock server and against the in-browser demo — so the site people click and the API the project ships cannot drift apart. 338 end-to-end tests, plus axe on every screen there is." }
+      ],
+      "decisions": [
+        { "choice": "Vanilla JS with JSDoc types, not TypeScript", "rationale": "Type checking is worth having, and tsc --noEmit reads JSDoc annotations perfectly well — it catches the same class of mistake with nothing standing between the source and the browser.", "tradeoff": "The annotations are wordier than TypeScript's and there are no interfaces to lean on. I would revisit at around 3,000 lines, or the moment a second person works on it." },
+        { "choice": "Write the API a second time, in the browser", "rationale": "A static host cannot run the backend, and a demo that stubs out a few fetch calls is a puppet show. Reimplementing the contract means the published site genuinely works — you can register, post, upvote, edit, delete and sign out.", "tradeoff": "Three implementations of one contract to keep honest. That is only survivable because the same end-to-end suite runs against all of them; without it, this would be a lie with a maintenance schedule." },
+        { "choice": "The refresh token in an httpOnly cookie", "rationale": "The earlier version kept it in localStorage and said out loud what that cost: an XSS bug walks away with the session. Moving the long-lived half somewhere JavaScript cannot read closes it — an attacker can act as you while the tab is open, and takes nothing with them.", "tradeoff": "Cookies bring CSRF and origin rules along with them, so the refresh route needs a nonce, and serving the frontend from 127.0.0.1 instead of localhost makes the cookie silently vanish. The demo cannot have one at all, and says so rather than pretending." },
+        { "choice": "A mobile Lighthouse of 97, not 100", "rationale": "The three missing points are unminified CSS and JavaScript, fixable only with the build step this frontend exists not to have. The comments in that CSS are a real part of what the repository is for.", "tradeoff": "Three points on a synthetic run, against a blocking time of 0 ms and a layout shift of 0 — the two numbers a person on a phone actually feels." }
+      ],
+      "status": "Solo-built. Live as an in-browser demo on GitHub Pages, with the real API shipped from CI as a Docker image."
+    }
+  },
+  {
     "id": "web-automation-engine",
     "title": "Web Automation Engine",
     "description": "A desktop automation tool with a Tkinter GUI that drives browser actions through Selenium. Uses explicit waits and background threading so the UI stays responsive during login, form submission, and file tasks.",
@@ -47,7 +84,7 @@
     "liveUrl": null,
     "sourceUrl": "https://github.com/AndrewTechTips/Browser-Automation",
     "featured": true,
-    "priority": 1,
+    "priority": 2,
     "caseStudy": {
       "tagline": "A desktop GUI that drives a real browser and never freezes.",
       "problem": [
@@ -78,7 +115,7 @@
     "liveUrl": null,
     "sourceUrl": "https://github.com/AndrewTechTips/European-Climate-Archive-API",
     "featured": true,
-    "priority": 2
+    "priority": 3
   },
   {
     "id": "django-restaurant-menu",
@@ -91,7 +128,7 @@
     "liveUrl": null,
     "sourceUrl": "https://github.com/AndrewTechTips/Django-Restaurant-Menu",
     "featured": true,
-    "priority": 3,
+    "priority": 4,
     "caseStudy": {
       "tagline": "QR to table, cart to kitchen — a full ordering loop on Django's built-ins.",
       "problem": [
@@ -123,7 +160,7 @@
     "liveUrl": "https://numerical-flow.streamlit.app/",
     "sourceUrl": "https://github.com/AndrewTechTips/Project_Calcul_Numeric",
     "featured": true,
-    "priority": 4,
+    "priority": 5,
     "caseStudy": {
       "tagline": "Exact solutions where they exist, numerical ones where they don't — plotted step by step.",
       "problem": [
@@ -154,7 +191,7 @@
     "liveUrl": null,
     "sourceUrl": "https://github.com/AndrewTechTips/Django-Form",
     "featured": true,
-    "priority": 5
+    "priority": 6
   },
   {
     "id": "thief-detection-notifier",
@@ -167,7 +204,7 @@
     "liveUrl": null,
     "sourceUrl": "https://github.com/AndrewTechTips/Thief-Detection-Notifier",
     "featured": true,
-    "priority": 6
+    "priority": 7
   },
   {
     "id": "binary-search-tree",
@@ -180,7 +217,7 @@
     "liveUrl": null,
     "sourceUrl": "https://github.com/AndrewTechTips/Binary-Search-Trees",
     "featured": true,
-    "priority": 7
+    "priority": 8
   },
   {
     "id": "flask-job-application-form",
@@ -193,7 +230,7 @@
     "liveUrl": null,
     "sourceUrl": "https://github.com/AndrewTechTips/Flask-Form",
     "featured": false,
-    "priority": 8
+    "priority": 9
   },
   {
     "id": "knights-travails",
@@ -205,7 +242,7 @@
     "liveUrl": null,
     "sourceUrl": "https://github.com/AndrewTechTips/Knight-Travails-JS",
     "featured": false,
-    "priority": 9
+    "priority": 10
   },
   {
     "id": "hashmap",
@@ -217,7 +254,7 @@
     "liveUrl": null,
     "sourceUrl": "https://github.com/AndrewTechTips/HashMap-Implementation",
     "featured": false,
-    "priority": 10
+    "priority": 11
   },
   {
     "id": "student-management-system",
@@ -231,7 +268,7 @@
     "liveUrl": null,
     "sourceUrl": "https://github.com/AndrewTechTips/Student-Management-System",
     "featured": false,
-    "priority": 11
+    "priority": 12
   },
   {
     "id": "tour-event-scraper",
@@ -244,7 +281,7 @@
     "liveUrl": null,
     "sourceUrl": "https://github.com/AndrewTechTips/Scrapify",
     "featured": false,
-    "priority": 12
+    "priority": 13
   },
   {
     "id": "weather-forecast-dashboard",
@@ -258,7 +295,7 @@
     "liveUrl": "https://weathrly.streamlit.app/",
     "sourceUrl": "https://github.com/AndrewTechTips/Weather-Forecast-Data-App",
     "featured": false,
-    "priority": 13
+    "priority": 14
   },
   {
     "id": "luxury-booking-engine",
@@ -271,7 +308,7 @@
     "liveUrl": "https://lux-booking.streamlit.app/",
     "sourceUrl": "https://github.com/AndrewTechTips/Hotel-Booking",
     "featured": false,
-    "priority": 14
+    "priority": 15
   },
   {
     "id": "news-email-automation",
@@ -283,7 +320,7 @@
     "liveUrl": null,
     "sourceUrl": "https://github.com/AndrewTechTips/Automated-News-Mail",
     "featured": false,
-    "priority": 15
+    "priority": 16
   },
   {
     "id": "batch-invoice-generator",
@@ -296,7 +333,7 @@
     "liveUrl": null,
     "sourceUrl": "https://github.com/AndrewTechTips/Excel_Invoices_To_Pdf",
     "featured": false,
-    "priority": 16
+    "priority": 17
   },
   {
     "id": "archive-manager",
@@ -308,7 +345,7 @@
     "liveUrl": null,
     "sourceUrl": "https://github.com/AndrewTechTips/Archive-Manager",
     "featured": false,
-    "priority": 17
+    "priority": 18
   },
   {
     "id": "horizon-weather",
@@ -321,7 +358,7 @@
     "liveUrl": "https://andrewtechtips.github.io/Weather-App/",
     "sourceUrl": "https://github.com/AndrewTechTips/Weather-App",
     "featured": false,
-    "priority": 18
+    "priority": 19
   },
   {
     "id": "battleship",
@@ -334,7 +371,7 @@
     "liveUrl": "https://andrewtechtips.github.io/Project-BattleShip/",
     "sourceUrl": "https://github.com/AndrewTechTips/Project-BattleShip",
     "featured": false,
-    "priority": 19
+    "priority": 20
   },
   {
     "id": "wordle-cli",
@@ -346,7 +383,7 @@
     "liveUrl": null,
     "sourceUrl": "https://github.com/AndrewTechTips/Worlde-Game",
     "featured": false,
-    "priority": 20
+    "priority": 21
   },
   {
     "id": "modern-calculator",
@@ -358,7 +395,7 @@
     "liveUrl": "https://andrewtechtips.github.io/project-calculator/",
     "sourceUrl": "https://github.com/AndrewTechTips/project-calculator",
     "featured": false,
-    "priority": 21
+    "priority": 22
   },
   {
     "id": "glassmorphic-todo-list",
@@ -371,7 +408,7 @@
     "liveUrl": "https://andrewtechtips.github.io/Todo-List/",
     "sourceUrl": "https://github.com/AndrewTechTips/Todo-List",
     "featured": false,
-    "priority": 22
+    "priority": 23
   },
   {
     "id": "midnight-library",
@@ -383,7 +420,7 @@
     "liveUrl": "https://andrewtechtips.github.io/project-library/",
     "sourceUrl": "https://github.com/AndrewTechTips/project-library",
     "featured": false,
-    "priority": 23
+    "priority": 24
   },
   {
     "id": "glassy-tic-tac-toe",
@@ -395,7 +432,7 @@
     "liveUrl": "https://andrewtechtips.github.io/Tic-Tac-Toe/",
     "sourceUrl": "https://github.com/AndrewTechTips/Tic-Tac-Toe",
     "featured": false,
-    "priority": 24
+    "priority": 25
   },
   {
     "id": "midnight-lounge",
@@ -408,7 +445,7 @@
     "liveUrl": "https://andrewtechtips.github.io/restaurant-page/",
     "sourceUrl": "https://github.com/AndrewTechTips/restaurant-page",
     "featured": false,
-    "priority": 25
+    "priority": 26
   },
   {
     "id": "rock-paper-scissors-battle",
@@ -420,7 +457,7 @@
     "liveUrl": "https://andrewtechtips.github.io/rock-paper-scissors/",
     "sourceUrl": "https://github.com/AndrewTechTips/rock-paper-scissors",
     "featured": false,
-    "priority": 26
+    "priority": 27
   },
   {
     "id": "etch-a-sketch",
@@ -432,7 +469,7 @@
     "liveUrl": "https://andrewtechtips.github.io/Etch-a-Sketch/",
     "sourceUrl": "https://github.com/AndrewTechTips/Etch-a-Sketch",
     "featured": false,
-    "priority": 27
+    "priority": 28
   },
   {
     "id": "nexus-admin-dashboard",
@@ -444,7 +481,7 @@
     "liveUrl": "https://andrewtechtips.github.io/admin-dashboard/",
     "sourceUrl": "https://github.com/AndrewTechTips/admin-dashboard",
     "featured": false,
-    "priority": 28
+    "priority": 29
   },
   {
     "id": "glassmorphism-sign-up-form",
@@ -456,7 +493,7 @@
     "liveUrl": "https://andrewtechtips.github.io/sign-up-form/",
     "sourceUrl": "https://github.com/AndrewTechTips/sign-up-form",
     "featured": false,
-    "priority": 29
+    "priority": 30
   },
   {
     "id": "meridian-watches",
@@ -468,6 +505,6 @@
     "liveUrl": "https://andrewtechtips.github.io/landing-page/",
     "sourceUrl": "https://github.com/AndrewTechTips/landing-page",
     "featured": false,
-    "priority": 30
+    "priority": 31
   }
 ]

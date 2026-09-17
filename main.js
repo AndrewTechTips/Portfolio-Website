@@ -1106,6 +1106,14 @@ function announceProjectStatus(message) {
     projectStatusTimer = setTimeout(() => { el.textContent = message; }, 60);
 }
 
+// Three tiers, one label each — read by both the card and the case-study modal so a project
+// can never be badged one thing in the grid and another inside its own case study.
+function projectBadgeLabel(project) {
+    if (project.flagship) return 'Flagship';
+    if (project.spotlight) return 'Spotlight';
+    return project.featured ? 'Featured' : '';
+}
+
 function buildProjectCard(project) {
     const card = document.createElement('article');
     card.className = 'project-card';
@@ -1114,10 +1122,16 @@ function buildProjectCard(project) {
     // below, so it needs no HTML-escaping.
     card.dataset.projectId = project.id;
     if (project.featured) card.classList.add('project-card-featured');
-    // One project carries `flagship: true` — it gets a distinct badge and the
-    // spotlight treatment in style.css (.project-card-flagship). Keyed off the
-    // data, not grid position, so it stays correct under any filter/sort.
-    if (project.flagship) card.classList.add('project-card-flagship');
+    // Two projects are the headline work and get a rim treatment in style.css instead of a
+    // plain bordered card: `flagship: true` (the deployed, Play-Store-bound one) burns amber,
+    // `spotlight: true` (the full-stack one beside it) burns rim-light blue. Both are keyed
+    // off the data, not grid position, so they stay correct under any filter/sort.
+    // .project-card-major carries the mechanism the two share (rim, glow, mobile layout);
+    // .tier-* carries only that tier's colours, as custom properties — which is also what the
+    // case-study modal wears, so a project is the same colour wherever it appears.
+    if (project.flagship) card.classList.add('tier-flagship');
+    if (project.spotlight) card.classList.add('tier-spotlight');
+    if (project.flagship || project.spotlight) card.classList.add('project-card-major');
 
     const techHTML = project.tech.map(t => {
         const safeName = escapeHtml(t.name);
@@ -1146,8 +1160,17 @@ function buildProjectCard(project) {
     const caseStudyBtn = project.caseStudy
         ? `<button type="button" class="project-btn project-btn-casestudy" data-casestudy-id="${escapeHtml(project.id)}">Case Study <span class="btn-circle"></span></button>`
         : '';
-    const badgeLabel = project.flagship ? 'Flagship' : 'Featured';
+    const badgeLabel = projectBadgeLabel(project);
     const featuredBadge = project.featured ? `<span class="featured-badge">${badgeLabel}</span>` : '';
+
+    // The two headline cards open with their case study's one-line hook before the paragraph.
+    // It is the same sentence the case-study modal leads with — not a second thing to write and
+    // keep in sync — and it exists to break what is otherwise a single unbroken block of prose:
+    // on a phone that block is the whole card, and a card that is only a wall of text reads as
+    // one long stretched column however well it is written.
+    const lead = (project.flagship || project.spotlight) && project.caseStudy && project.caseStudy.tagline
+        ? `<p class="project-lead">${escapeHtml(project.caseStudy.tagline)}</p>`
+        : '';
 
     // Glare layer for the pointer-tracked tilt (see setupCardTilt). Sits behind the card's
     // text via z-index (the card is an `isolation: isolate` stacking context), stays fully
@@ -1156,6 +1179,7 @@ function buildProjectCard(project) {
         <span class="project-card__glare" aria-hidden="true"></span>
         ${featuredBadge}
         <h3 class="project-title">${escapeHtml(project.title)}</h3>
+        ${lead}
         <p class="project-desc">${escapeHtml(project.description)}</p>
         <div class="project-tech">${techHTML}</div>
         <div class="project-actions">${caseStudyBtn}${liveBtn}${sourceBtn}</div>
@@ -1427,10 +1451,11 @@ function setupContactModal() {
 // Escape to close, and focus returned to the button that opened it.
 let caseStudyLastTrigger = null;
 
-// ---- Flagship architecture diagram ----
-// A pure-SVG, self-drawing flow diagram for the flagship project (see the `project.flagship`
-// check in renderCaseStudy below), built directly from that project's own `architecture` array
-// in projects.json — no separate diagram data file to keep in sync with the case study text.
+// ---- Headline architecture diagram ----
+// A pure-SVG, self-drawing flow diagram for the two headline projects (see the
+// `flagship || spotlight` check in renderCaseStudy below), built directly from each project's
+// own `architecture` array in projects.json — no separate diagram data file to keep in sync
+// with the case study text.
 // Every node is DIAGRAM_NODE_H tall and every connector exactly DIAGRAM_GAP long, which is
 // what lets style.css express per-step stagger and the pulse dot's travel distance without any
 // inline style="" attribute (see the CSP comment on .cs-diagram there for why that matters on
@@ -1535,7 +1560,7 @@ function setupArchitectureDiagram(scrollRoot) {
 
 function renderCaseStudy(project) {
     const cs = project.caseStudy || {};
-    const badgeLabel = project.flagship ? 'Flagship' : (project.featured ? 'Featured' : '');
+    const badgeLabel = projectBadgeLabel(project);
     const badge = badgeLabel ? `<span class="featured-badge">${escapeHtml(badgeLabel)}</span>` : '';
 
     const problemParas = (Array.isArray(cs.problem) ? cs.problem : [cs.problem])
@@ -1574,7 +1599,7 @@ function renderCaseStudy(project) {
         <h3 class="modal-title" id="case-study-modal-title">${escapeHtml(project.title)}</h3>
         ${cs.tagline ? `<p class="cs-tagline">${escapeHtml(cs.tagline)}</p>` : ''}
         ${problemParas ? `<div class="cs-block"><h4 class="cs-eyebrow">The problem</h4>${problemParas}</div>` : ''}
-        ${archItems ? `<div class="cs-block"><h4 class="cs-eyebrow">Architecture</h4>${project.flagship ? buildArchitectureDiagram(cs.architecture) : ''}<ol class="cs-arch">${archItems}</ol></div>` : ''}
+        ${archItems ? `<div class="cs-block"><h4 class="cs-eyebrow">Architecture</h4>${project.flagship || project.spotlight ? buildArchitectureDiagram(cs.architecture) : ''}<ol class="cs-arch">${archItems}</ol></div>` : ''}
         ${decisions ? `<div class="cs-block"><h4 class="cs-eyebrow">Key decisions</h4>${decisions}</div>` : ''}
         ${cs.status ? `<p class="cs-status">${escapeHtml(cs.status)}</p>` : ''}
         <div class="project-actions cs-actions">${liveBtn}${sourceBtn}</div>
@@ -1600,6 +1625,11 @@ function setupCaseStudyModal() {
 
     const openCaseStudy = (project, trigger) => {
         caseStudyLastTrigger = trigger || null;
+        // Same tier class the card carries — the palette rides in on inherited custom properties
+        // (see .tier-flagship / .tier-spotlight in style.css), so nothing here names a colour.
+        // Toggled rather than added, since one modal element is reused for every project.
+        body.classList.toggle('tier-flagship', !!project.flagship);
+        body.classList.toggle('tier-spotlight', !!project.spotlight);
         body.innerHTML = renderCaseStudy(project);
         bindMagneticButtons();   // Live / Source buttons inside the freshly built body
         setupArchitectureDiagram(body);   // no-op unless this project has one (see renderCaseStudy)
