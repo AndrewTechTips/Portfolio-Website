@@ -739,7 +739,169 @@ html.motion-off .github-stats__live.is-live { animation: none; }
         grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
     }
 }
-.project-other-section .project-subsection-title { color: rgba(255, 255, 255, 0.35); }
+/* Three headline cards. Wide enough, they share one row. Between that and a phone, auto-fit
+   would leave the third card orphaned in half a row, so it takes the full width under the
+   other two instead — any odd card out does, so a filter that leaves one or three behaves. */
+@media (min-width: 768px) and (max-width: 1179px) {
+    .project-featured-section .project-grid-featured { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .project-grid-featured > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+}
+@media (min-width: 480px) and (max-width: 767px) {
+    .project-featured-section .project-grid-featured { grid-template-columns: 1fr; }
+}
+@media (min-width: 1180px) {
+    .project-featured-section .project-grid-featured { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+.project-more-section { margin-bottom: 72px; }
+.project-more-section .project-subsection-title { color: rgba(255, 255, 255, 0.45); }
+
+/* ---- Archive ---- */
+/* Everything outside the first two tiers, as a grouped list rather than cards (see
+   renderArchive in main.js): one quiet block a reader can skim or skip, collapsed until the
+   toggle opens it. Rows are dividers, not panels, so thirty of them cost no blur at all. */
+.project-archive-section {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding-top: 40px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.archive-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px 40px;
+    flex-wrap: wrap;
+}
+.archive-header .project-subsection-title { margin: 0 0 10px; color: rgba(255, 255, 255, 0.45); }
+.archive-lead {
+    max-width: 560px;
+    font-size: 14px;
+    line-height: 1.7;
+    font-weight: 300;
+    color: rgba(209, 213, 219, 0.8);
+}
+/* `button.project-btn` strips the border for <button> elements (it is meant for the filled
+   case-study button), which would leave this outline button as floating text; restore it. */
+button.archive-toggle { cursor: pointer; flex-shrink: 0; border: 1px solid rgba(255, 255, 255, 0.5); }
+
+.archive-body {
+    margin-top: 36px;
+    display: grid;
+    gap: 40px;
+    transition: opacity 0.3s ease;
+}
+.archive-body[hidden] { display: none; }
+.archive-body.is-filtering { opacity: 0; }
+.archive-body:not([hidden]) { animation: archive-open 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+@keyframes archive-open {
+    from { opacity: 0; translate: 0 12px; }
+    to   { opacity: 1; translate: 0 0; }
+}
+
+.archive-group__title {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 6px;
+    font-family: 'Italiana', serif;
+    font-size: 22px;
+    font-weight: 400;
+    color: #fff6ed;
+}
+.archive-group__count {
+    font-family: 'Outfit', sans-serif;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.4);
+    font-variant-numeric: tabular-nums;
+}
+.archive-list { list-style: none; }
+
+.archive-row {
+    display: grid;
+    /* Fixed side columns, so the tech and link columns line up down the whole list however
+       many links a row has (an `auto` column would size to each row on its own). 240px fits
+       all three links side by side. */
+    grid-template-columns: minmax(0, 1fr) 170px 240px;
+    align-items: center;
+    gap: 8px 28px;
+    padding: 18px 12px;
+    margin: 0 -12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 10px;
+    transition: background 0.25s ease;
+}
+.archive-row:hover { background: rgba(255, 255, 255, 0.035); }
+.archive-row__title {
+    display: block;
+    font-size: 15px;
+    font-weight: 500;
+    color: #fff6ed;
+    margin-bottom: 4px;
+}
+.archive-row__desc {
+    font-size: 13px;
+    line-height: 1.6;
+    font-weight: 300;
+    color: rgba(209, 213, 219, 0.78);
+    text-wrap: pretty;
+}
+.archive-row__tech {
+    font-size: 10.5px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: rgba(255, 199, 143, 0.7);
+}
+.archive-row__links { display: flex; gap: 6px; justify-content: flex-end; }
+.archive-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 32px;
+    padding: 6px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 20px;
+    background: transparent;
+    color: #e5e5e5;
+    font-family: 'Outfit', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: border-color 0.25s, color 0.25s, background 0.25s;
+}
+.archive-link:hover { border-color: rgba(255, 255, 255, 0.4); color: #ffffff; }
+.archive-link-casestudy { border-color: rgba(255, 179, 71, 0.4); color: #ffd9a8; }
+.archive-link-casestudy:hover { border-color: rgba(255, 179, 71, 0.8); color: #ffe4b8; }
+
+.archive-row.cmdk-jump-highlight { animation: archive-jump-highlight 1.4s cubic-bezier(0.16, 1, 0.3, 1); }
+@keyframes archive-jump-highlight {
+    0%   { background: rgba(255, 179, 71, 0.16); }
+    100% { background: rgba(255, 179, 71, 0); }
+}
+
+@media (max-width: 1023px) {
+    .archive-row { grid-template-columns: minmax(0, 1fr) 240px; }
+    .archive-row__tech { grid-column: 1; grid-row: 2; }
+    .archive-row__links { grid-column: 2; grid-row: 1 / span 2; }
+}
+@media (max-width: 599px) {
+    .archive-header { align-items: flex-start; }
+    .archive-row { grid-template-columns: 1fr; padding: 18px 4px; margin: 0 -4px; }
+    .archive-row__tech,
+    .archive-row__links { grid-column: 1; grid-row: auto; }
+    .archive-row__links { justify-content: flex-start; flex-wrap: wrap; }
+    .archive-link { min-height: 40px; padding: 8px 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .archive-body:not([hidden]),
+    .archive-row.cmdk-jump-highlight { animation: none; }
+    .archive-row.cmdk-jump-highlight { outline: 2px solid rgba(255, 179, 71, 0.7); outline-offset: 2px; }
+}
+html.motion-off .archive-body:not([hidden]),
+html.motion-off .archive-row.cmdk-jump-highlight { animation: none; }
+html.motion-off .archive-row.cmdk-jump-highlight { outline: 2px solid rgba(255, 179, 71, 0.7); outline-offset: 2px; }
 
 .project-empty-state {
     display: none;
@@ -753,9 +915,6 @@ html.motion-off .github-stats__live.is-live { animation: none; }
 }
 .project-empty-state h3 { font-family: 'Italiana', serif; font-size: 24px; color: #fff6ed; }
 .project-empty-state p { font-size: 14px; color: #d1d5db; font-weight: 300; }
-
-.show-more-wrapper { display: none; justify-content: center; margin-top: 40px; }
-.show-more-wrapper .project-btn { cursor: pointer; }
 
 .project-card {
     position: relative;
@@ -833,16 +992,17 @@ html.motion-off .project-card.cmdk-jump-highlight { animation: none; outline: 2p
     border-radius: 20px;
 }
 
-/* ---- Headline cards: flagship + spotlight ---- */
-/* Two cards carry the headline work (see buildProjectCard in main.js): `flagship: true` is the
-   deployed, Play-Store-bound project, `spotlight: true` is the full-stack one beside it. This
-   site's palette is a forge — molten amber (#ffb347) cooling to rim-light blue (#78beff) — so
-   the pair takes one end of it each: the flagship burns amber, the spotlight cools to blue.
+/* ---- Headline cards: flagship + spotlight + showcase ---- */
+/* Three cards carry the headline work (see buildProjectCard in main.js), picked by `tier` in
+   projects.json. This site's palette is a forge — molten amber (#ffb347) cooling to rim-light
+   blue (#78beff) — so the first two take one end of it each: the flagship burns amber, the
+   spotlight cools to blue. The showcase takes the colour bronze turns once it has weathered,
+   verdigris, the one hue the hero's bronze horse would grow on its own.
    Everything about the treatment is shared and lives on .project-card-major: a single ember of
    heat travelling the card's rim on a slow loop over a dim hairline, plus a low glow lifting the
    card off the black. One moving element per card, nothing else. Each tier only supplies colour,
-   as custom properties on .tier-flagship / .tier-spotlight — so a third tier would be a block of
-   variables, not a second copy of the mechanism. The card and its case-study modal both wear the
+   as custom properties on .tier-flagship / .tier-spotlight / .tier-showcase — so a tier is a
+   block of variables, not another copy of the mechanism. The card and its case-study modal both wear the
    tier class, which is why the variables sit on a class of their own rather than on the card:
    custom properties inherit, so the modal's badge and standfirst pick up the same palette without
    a second set of rules naming each tier again. Frozen to a static gradient edge under
@@ -887,6 +1047,23 @@ html.motion-off .project-card.cmdk-jump-highlight { animation: none; outline: 2p
     --rim-badge-ink: #041826;
     --rim-badge-glow: rgba(111, 182, 245, 0.45);
     --rim-lead: #c6e3ff;
+}
+
+.tier-showcase {
+    --rim-edge: rgba(130, 222, 196, 0.5);
+    --rim-edge-hover: rgba(156, 234, 210, 0.78);
+    --rim-halo: rgba(38, 176, 140, 0.24);
+    --rim-halo-tight: rgba(92, 212, 176, 0.16);
+    --rim-halo-hover: rgba(38, 176, 140, 0.36);
+    --rim-halo-tight-hover: rgba(92, 212, 176, 0.24);
+    --rim-dim-a: rgba(92, 212, 176, 0.14);
+    --rim-dim-b: rgba(255, 179, 71, 0.1);
+    --rim-ember: rgba(222, 255, 242, 0.92);
+    --rim-ember-tail: rgba(255, 179, 71, 0.36);
+    --rim-badge: linear-gradient(135deg, #e2fff4, #4fc9a2);
+    --rim-badge-ink: #03201a;
+    --rim-badge-glow: rgba(79, 201, 162, 0.45);
+    --rim-lead: #bff0de;
 }
 
 .project-card-major {
@@ -1473,7 +1650,7 @@ html.motion-off .project-card-major::before { animation: none; }
     text-wrap: pretty;
 }
 
-/* The headline projects' modals carry .tier-flagship / .tier-spotlight (set in openCaseStudy),
+/* The headline projects' modals carry their .tier-* class (set in openCaseStudy),
    so the badge that opens the case study matches the badge on the card that opened it. Every
    other project inherits nothing and falls back to the original amber pill. */
 .case-study-body .featured-badge {
@@ -1818,6 +1995,133 @@ button.project-btn { border: none; cursor: pointer; font-family: 'Outfit', sans-
 }
 
 /* ============================================================
+   Certificates
+   ============================================================ */
+/* Same footing as the anatomy section after it: normal flow, opaque, above the WebGL canvas. */
+.certs-section {
+    position: relative;
+    z-index: 15;
+    background: #000000;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 120px 60px 120px;
+    box-sizing: border-box;
+}
+.certs-section:focus { outline: none; }
+.certs-inner { max-width: 1200px; margin: 0 auto; }
+.certs-header { max-width: 720px; margin: 0 auto 56px; text-align: center; }
+.certs-title {
+    font-family: 'Italiana', serif;
+    font-size: clamp(34px, 5vw, 60px);
+    color: #fff6ed;
+    margin-bottom: 18px;
+}
+.certs-lead {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 300;
+    font-size: 15px;
+    line-height: 1.75;
+    color: #d1d5db;
+    letter-spacing: 0.3px;
+}
+.certs-grid {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 22px;
+}
+.cert-card {
+    display: flex;
+    flex-direction: column;
+    background: rgba(10, 10, 10, 0.45);
+    backdrop-filter: blur(24px) saturate(140%);
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top-color: rgba(255, 199, 143, 0.35);
+    border-radius: 18px;
+    padding: 28px;
+}
+.cert-issuer {
+    font-family: 'Outfit', sans-serif;
+    font-size: 10.5px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: rgba(255, 199, 143, 0.85);
+    margin-bottom: 14px;
+}
+.cert-title {
+    font-family: 'Italiana', serif;
+    font-size: 23px;
+    line-height: 1.25;
+    color: #fff6ed;
+    margin-bottom: 12px;
+    text-wrap: balance;
+}
+.cert-body {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 300;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #d1d5db;
+    text-wrap: pretty;
+}
+/* Pinned to the bottom of the card, so links line up across a row of cards of uneven length. */
+.cert-meta {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: auto;
+    padding-top: 22px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+}
+.cert-link {
+    color: #ffd9a8;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(255, 217, 168, 0.35);
+}
+.cert-link:hover { border-bottom-color: rgba(255, 217, 168, 0.8); }
+
+/* An exam still being studied for: dashed, cooler, and saying so in words rather than colour. */
+.cert-card--pending {
+    border-style: dashed;
+    border-color: rgba(120, 190, 255, 0.28);
+    background: rgba(10, 10, 10, 0.3);
+}
+.cert-card--pending .cert-issuer { color: rgba(151, 205, 255, 0.85); }
+.cert-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px;
+    border: 1px solid rgba(120, 190, 255, 0.35);
+    border-radius: 20px;
+    font-size: 10.5px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #c6e3ff;
+}
+.cert-status::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #78beff;
+}
+
+@media (max-width: 1023px) {
+    .certs-section { padding: 110px 32px 110px; }
+}
+@media (max-width: 767px) {
+    .certs-section { padding: 90px 24px 90px; }
+    .certs-header { margin-bottom: 40px; }
+}
+@media (max-width: 479px) {
+    .certs-grid { grid-template-columns: 1fr; }
+    .cert-card { padding: 24px; }
+}
+
+/* ============================================================
    Mobile performance + touch targets
    ============================================================ */
 /* backdrop-filter is the expensive part of the glass look — a full-frame blur+saturate
@@ -1830,6 +2134,7 @@ button.project-btn { border: none; cursor: pointer; font-family: 'Outfit', sans-
     .project-card,
     .project-card:hover,
     .anatomy-card,
+    .cert-card,
     .project-filter-bar,
     .github-stats {
         backdrop-filter: none;

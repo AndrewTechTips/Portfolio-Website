@@ -107,13 +107,11 @@ const SETTLE_RADIUS = 4.0;
 const BRONZE_HORSE_MODEL_URL = "assets/bronze_horse.glb";
 
 // ---- Project data ----
-// Smart schema: `featured` pins a project to the top of the grid, `priority` orders the
-// rest (lower = earlier). New projects can just be appended — no manual reordering needed,
-// see sortProjects() / getVisibleProjects() below.
-// ---- Project data ----
-// Smart schema: `featured` pins a project to the top of the grid, `priority` orders the
-// rest (lower = earlier). Loaded at runtime from projects.json — add a new project by
-// appending one object to that file, no code changes needed, no manual reordering.
+// Loaded at runtime from projects.json. Each project sits in one `section` — "featured" (the
+// three headline cards), "more" (a short row of solid work under them) or "archive" (a
+// collapsed, grouped list of everything else, grouped by its `category`). `tier` colours a
+// headline card, and `priority` orders projects within a section (lower = earlier). Adding a
+// project is appending one object to that file — see sortProjects() / getVisibleProjects().
 let PROJECTS = [];
 
 async function loadProjects() {
@@ -226,12 +224,20 @@ async function setupGithubStats() {
 // Display labels for the auto-generated filter bar (falls back to the raw tech name if unlisted).
 const LANGUAGE_LABELS = { python: "Python", javascript: "JavaScript", html5: "HTML/CSS" };
 
-// Featured projects always float to the top; everything else is ordered by `priority`
-// (ascending, missing priority sorts last). Adding a new project is just appending an
-// object to PROJECTS — this handles the layout automatically.
+// Sections in page order. A project with a missing or unknown `section` lands in the archive,
+// so a half-filled entry in projects.json can never push its way onto the headline row.
+const PROJECT_SECTIONS = ['featured', 'more', 'archive'];
+function projectSection(project) {
+    return PROJECT_SECTIONS.includes(project.section) ? project.section : 'archive';
+}
+
+// Section first, then `priority` within it (ascending, missing priority sorts last). Adding a
+// new project is just appending an object to PROJECTS — this handles the layout automatically.
 function sortProjects(list) {
     return [...list].sort((a, b) => {
-        if (a.featured !== b.featured) return a.featured ? -1 : 1;
+        const sa = PROJECT_SECTIONS.indexOf(projectSection(a));
+        const sb = PROJECT_SECTIONS.indexOf(projectSection(b));
+        if (sa !== sb) return sa - sb;
         const pa = typeof a.priority === "number" ? a.priority : Number.MAX_SAFE_INTEGER;
         const pb = typeof b.priority === "number" ? b.priority : Number.MAX_SAFE_INTEGER;
         return pa - pb;
@@ -941,6 +947,10 @@ function jumpToFraction(fraction) {
         currentScroll = 1;
     }
 
+    scrollToY(targetY);
+}
+
+function scrollToY(targetY) {
     const startY = window.scrollY;
     window.scrollTo({ top: targetY, behavior: reducedMotion ? 'auto' : 'smooth' });
     // Some webviews (and headless/automation contexts) treat behavior:'smooth' as a no-op
@@ -954,6 +964,19 @@ function jumpToFraction(fraction) {
             }
         }, 400);
     }
+}
+
+// For destinations below the work grid (the archive, certificates), whose position depends on
+// how tall the grid rendered rather than on a fixed fraction of the hero. They sit past the
+// hero just like "Work" does, so the reveal and camera state are snapped to fully settled the
+// same way jumpToFraction does for fraction >= 1, then the element itself is scrolled to.
+function jumpToSection(id, { openArchive = false } = {}) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (openArchive && !archiveOpen) document.getElementById('archive-toggle')?.click();
+    revealProgress = 1;
+    currentScroll = 1;
+    scrollToY(el.getBoundingClientRect().top + window.scrollY);
 }
 
 function setupNavigation() {
@@ -1106,12 +1129,17 @@ function announceProjectStatus(message) {
     projectStatusTimer = setTimeout(() => { el.textContent = message; }, 60);
 }
 
-// Three tiers, one label each — read by both the card and the case-study modal so a project
-// can never be badged one thing in the grid and another inside its own case study.
+// The headline tiers, one label each — read by both the card and the case-study modal so a
+// project can never be badged one thing in the grid and another inside its own case study.
+// Each key also names the .tier-* class in style.css that carries that tier's colours.
+const PROJECT_TIERS = { flagship: 'Flagship', spotlight: 'Spotlight', showcase: 'Showcase' };
+function projectTier(project) {
+    return Object.hasOwn(PROJECT_TIERS, project.tier) ? project.tier : null;
+}
 function projectBadgeLabel(project) {
-    if (project.flagship) return 'Flagship';
-    if (project.spotlight) return 'Spotlight';
-    return project.featured ? 'Featured' : '';
+    const tier = projectTier(project);
+    if (tier) return PROJECT_TIERS[tier];
+    return projectSection(project) === 'featured' ? 'Featured' : '';
 }
 
 function buildProjectCard(project) {
@@ -1121,17 +1149,15 @@ function buildProjectCard(project) {
     // jumpToProject) — set as a real element property, not part of the innerHTML template
     // below, so it needs no HTML-escaping.
     card.dataset.projectId = project.id;
-    if (project.featured) card.classList.add('project-card-featured');
-    // Two projects are the headline work and get a rim treatment in style.css instead of a
-    // plain bordered card: `flagship: true` (the deployed, Play-Store-bound one) burns amber,
-    // `spotlight: true` (the full-stack one beside it) burns rim-light blue. Both are keyed
-    // off the data, not grid position, so they stay correct under any filter/sort.
-    // .project-card-major carries the mechanism the two share (rim, glow, mobile layout);
-    // .tier-* carries only that tier's colours, as custom properties — which is also what the
-    // case-study modal wears, so a project is the same colour wherever it appears.
-    if (project.flagship) card.classList.add('tier-flagship');
-    if (project.spotlight) card.classList.add('tier-spotlight');
-    if (project.flagship || project.spotlight) card.classList.add('project-card-major');
+    if (projectSection(project) === 'featured') card.classList.add('project-card-featured');
+    // The headline projects get a rim treatment in style.css instead of a plain bordered card:
+    // `tier: "flagship"` burns amber, `"spotlight"` rim-light blue, `"showcase"` the verdigris
+    // of the bronze horse's patina. Keyed off the data, not grid position, so they stay correct
+    // under any filter/sort. .project-card-major carries the mechanism they share (rim, glow,
+    // mobile layout); .tier-* carries only that tier's colours, as custom properties — which is
+    // also what the case-study modal wears, so a project is the same colour wherever it appears.
+    const tier = projectTier(project);
+    if (tier) card.classList.add(`tier-${tier}`, 'project-card-major');
 
     const techHTML = project.tech.map(t => {
         const safeName = escapeHtml(t.name);
@@ -1161,14 +1187,14 @@ function buildProjectCard(project) {
         ? `<button type="button" class="project-btn project-btn-casestudy" data-casestudy-id="${escapeHtml(project.id)}">Case Study <span class="btn-circle"></span></button>`
         : '';
     const badgeLabel = projectBadgeLabel(project);
-    const featuredBadge = project.featured ? `<span class="featured-badge">${badgeLabel}</span>` : '';
+    const featuredBadge = badgeLabel ? `<span class="featured-badge">${escapeHtml(badgeLabel)}</span>` : '';
 
-    // The two headline cards open with their case study's one-line hook before the paragraph.
+    // The headline cards open with their case study's one-line hook before the paragraph.
     // It is the same sentence the case-study modal leads with — not a second thing to write and
     // keep in sync — and it exists to break what is otherwise a single unbroken block of prose:
     // on a phone that block is the whole card, and a card that is only a wall of text reads as
     // one long stretched column however well it is written.
-    const lead = (project.flagship || project.spotlight) && project.caseStudy && project.caseStudy.tagline
+    const lead = tier && project.caseStudy && project.caseStudy.tagline
         ? `<p class="project-lead">${escapeHtml(project.caseStudy.tagline)}</p>`
         : '';
 
@@ -1203,108 +1229,151 @@ function observeProjectCards(scope) {
     cards.forEach(card => io.observe(card));
 }
 
-const OTHER_PAGE_SIZE = 6;
-let showingAllOthers = false;
+// The archive is a list rather than a grid of cards: thirty cards of equal weight read as thirty
+// things to judge, while a grouped list reads as one thing — "and here is everything else" —
+// that a reader can skim or skip entirely. It starts collapsed on every visit and stays the way
+// the visitor left it across filter changes.
+let archiveOpen = false;
 
-function updateShowMoreControl(otherCount) {
-    const wrapper = document.getElementById('show-more-wrapper');
-    const label = document.getElementById('show-more-label');
-    if (!wrapper || !label) return;
-    wrapper.style.display = otherCount > OTHER_PAGE_SIZE ? 'flex' : 'none';
-    label.textContent = showingAllOthers ? 'Show Less' : 'Show More';
+function buildArchiveRow(project) {
+    const row = document.createElement('li');
+    row.className = 'archive-row';
+    row.dataset.projectId = project.id;   // jumpToProject finds rows the same way it finds cards
+
+    const safeTitle = escapeHtml(project.title);
+    const safeLiveUrl = project.liveUrl ? escapeUrl(project.liveUrl) : null;
+    const safeSourceUrl = project.sourceUrl ? escapeUrl(project.sourceUrl) : null;
+    // Twenty-odd links all called "Live" and "Source" are useless in a screen reader's links
+    // list, so each carries its project's name in a visually hidden suffix.
+    const links = [
+        project.caseStudy
+            ? `<button type="button" class="archive-link archive-link-casestudy" data-casestudy-id="${escapeHtml(project.id)}">Case study<span class="sr-only">: ${safeTitle}</span></button>`
+            : '',
+        safeLiveUrl
+            ? `<a href="${safeLiveUrl}" target="_blank" rel="noopener" class="archive-link">Live<span class="sr-only">: ${safeTitle}</span> <span aria-hidden="true">&#8599;</span></a>`
+            : '',
+        safeSourceUrl
+            ? `<a href="${safeSourceUrl}" target="_blank" rel="noopener" class="archive-link">Source<span class="sr-only">: ${safeTitle}</span> <span aria-hidden="true">&#8599;</span></a>`
+            : ''
+    ].join('');
+
+    row.innerHTML = `
+        <div class="archive-row__text">
+            <span class="archive-row__title">${safeTitle}</span>
+            <p class="archive-row__desc">${escapeHtml(project.description)}</p>
+        </div>
+        <span class="archive-row__tech">${project.tech.map(t => escapeHtml(t.name)).join(' · ')}</span>
+        <div class="archive-row__links">${links}</div>
+    `;
+    return row;
+}
+
+// Groups follow the order their first project appears in (projects are already sorted by
+// priority), so the order of the groups is set in projects.json like everything else.
+function renderArchive(list) {
+    const body = document.getElementById('archive-body');
+    if (!body) return;
+
+    const groups = new Map();
+    list.forEach(project => {
+        const category = project.category || 'Other';
+        if (!groups.has(category)) groups.set(category, []);
+        groups.get(category).push(project);
+    });
+
+    body.innerHTML = '';
+    groups.forEach((projects, category) => {
+        const group = document.createElement('div');
+        group.className = 'archive-group';
+        group.innerHTML = `
+            <h4 class="archive-group__title">${escapeHtml(category)} <span class="archive-group__count">${projects.length}</span></h4>
+        `;
+        const listEl = document.createElement('ul');
+        listEl.className = 'archive-list';
+        projects.forEach(project => listEl.appendChild(buildArchiveRow(project)));
+        group.appendChild(listEl);
+        body.appendChild(group);
+    });
+}
+
+function updateArchiveControl(count) {
+    const btn = document.getElementById('archive-toggle');
+    const label = document.getElementById('archive-toggle-label');
+    const body = document.getElementById('archive-body');
+    if (!btn || !label || !body) return;
+    btn.setAttribute('aria-expanded', String(archiveOpen));
+    body.hidden = !archiveOpen;
+    if (archiveOpen) label.textContent = 'Hide the archive';
+    else label.textContent = count === 1 ? 'Show 1 project' : `Show all ${count} projects`;
 }
 
 function toggleSectionVisibility(sectionEl, hasContent) {
     if (sectionEl) sectionEl.style.display = hasContent ? '' : 'none';
 }
 
-// The grid is split into "Featured Work" (always fully shown) and "Other Projects"
-// (paginated — only the first OTHER_PAGE_SIZE render until "Show More" is clicked) so a
-// recruiter sees the strongest work first instead of scrolling past 30 cards.
+// Three tiers of attention, top to bottom: "Featured" (the headline cards), "Also worth a look"
+// (a short row of ordinary cards), then the archive list, collapsed — so a recruiter meets the
+// strongest work first and never has to scroll past thirty cards to reach the rest of the page.
 // On the initial paint, cards reveal via IntersectionObserver as the user scrolls to them.
-// On a filter change (animateGrid: true) both grids fade as one unit instead — the cards
-// are already in the viewport, so a per-card scroll observer would be pointless.
+// On a filter change (animateGrid: true) everything fades as one unit instead — the cards are
+// already in the viewport, so a per-card scroll observer would be pointless.
 function renderProjectCards(filter = activeProjectFilter, { animateGrid = false } = {}) {
     const featuredGrid = document.getElementById('featured-project-grid');
-    const otherGrid = document.getElementById('other-project-grid');
-    const featuredSection = document.getElementById('featured-section');
-    const otherSection = document.getElementById('other-section');
+    const moreGrid = document.getElementById('more-project-grid');
+    const archiveBody = document.getElementById('archive-body');
     const emptyState = document.getElementById('project-empty-state');
-    if (!featuredGrid || !otherGrid) return;
+    if (!featuredGrid || !moreGrid) return;
+    const fading = [featuredGrid, moreGrid, archiveBody].filter(Boolean);
 
     const paint = () => {
         const filtered = getVisibleProjects(filter);
-        const featuredList = filtered.filter(p => p.featured);
-        const otherList = filtered.filter(p => !p.featured);
-        const visibleOther = showingAllOthers ? otherList : otherList.slice(0, OTHER_PAGE_SIZE);
+        const inSection = (section) => filtered.filter(p => projectSection(p) === section);
+        const featuredList = inSection('featured');
+        const moreList = inSection('more');
+        const archiveList = inSection('archive');
 
         featuredGrid.innerHTML = '';
-        otherGrid.innerHTML = '';
+        moreGrid.innerHTML = '';
         featuredList.forEach(project => featuredGrid.appendChild(buildProjectCard(project)));
-        visibleOther.forEach(project => otherGrid.appendChild(buildProjectCard(project)));
+        moreList.forEach(project => moreGrid.appendChild(buildProjectCard(project)));
+        renderArchive(archiveList);
 
-        toggleSectionVisibility(featuredSection, featuredList.length > 0);
-        toggleSectionVisibility(otherSection, otherList.length > 0);
+        toggleSectionVisibility(document.getElementById('featured-section'), featuredList.length > 0);
+        toggleSectionVisibility(document.getElementById('more-section'), moreList.length > 0);
+        toggleSectionVisibility(document.getElementById('archive-section'), archiveList.length > 0);
         if (emptyState) emptyState.style.display = filtered.length === 0 ? 'flex' : 'none';
-        updateShowMoreControl(otherList.length);
+        updateArchiveControl(archiveList.length);
 
         if (animateGrid) {
-            [...featuredGrid.children, ...otherGrid.children].forEach(c => c.classList.add('in-view'));
-            requestAnimationFrame(() => {
-                featuredGrid.classList.remove('is-filtering');
-                otherGrid.classList.remove('is-filtering');
-            });
+            [...featuredGrid.children, ...moreGrid.children].forEach(c => c.classList.add('in-view'));
+            requestAnimationFrame(() => fading.forEach(el => el.classList.remove('is-filtering')));
         } else {
             observeProjectCards(featuredGrid);
-            observeProjectCards(otherGrid);
+            observeProjectCards(moreGrid);
         }
         bindMagneticButtons();   // Live / Source / Case Study buttons on the new cards
     };
 
     if (animateGrid) {
-        featuredGrid.classList.add('is-filtering');
-        otherGrid.classList.add('is-filtering');
+        fading.forEach(el => el.classList.add('is-filtering'));
         setTimeout(paint, 300);
     } else {
         paint();
     }
 }
 
-// Expands/collapses the "Other Projects" grid in place — only the delta cards are
-// added or removed, so the already-visible first page never flashes or re-animates.
-function setupShowMoreButton() {
-    const btn = document.getElementById('show-more-btn');
+function setupArchiveToggle() {
+    const btn = document.getElementById('archive-toggle');
     if (!btn) return;
 
     btn.addEventListener('click', () => {
-        const otherGrid = document.getElementById('other-project-grid');
-        if (!otherGrid) return;
-
-        const filtered = getVisibleProjects(activeProjectFilter);
-        const otherList = filtered.filter(p => !p.featured);
-        showingAllOthers = !showingAllOthers;
-
-        if (showingAllOthers) {
-            const toAdd = otherList.slice(otherGrid.children.length);
-            const newCards = toAdd.map(project => {
-                const card = buildProjectCard(project);
-                otherGrid.appendChild(card);
-                return card;
-            });
-            requestAnimationFrame(() => requestAnimationFrame(() => {
-                newCards.forEach(card => card.classList.add('in-view'));
-            }));
-            bindMagneticButtons();
-        } else {
-            const toRemove = [...otherGrid.children].slice(OTHER_PAGE_SIZE);
-            toRemove.forEach(card => card.classList.remove('in-view'));
-            setTimeout(() => toRemove.forEach(card => card.remove()), 300);
-        }
-
-        updateShowMoreControl(otherList.length);
-        announceProjectStatus(showingAllOthers
-            ? `Showing all ${otherList.length} other projects.`
-            : `Showing ${Math.min(OTHER_PAGE_SIZE, otherList.length)} of ${otherList.length} other projects.`);
+        archiveOpen = !archiveOpen;
+        const count = getVisibleProjects(activeProjectFilter)
+            .filter(p => projectSection(p) === 'archive').length;
+        updateArchiveControl(count);
+        announceProjectStatus(archiveOpen
+            ? `Archive open, ${count} ${count === 1 ? 'project' : 'projects'}.`
+            : 'Archive closed.');
     });
 }
 
@@ -1338,7 +1407,6 @@ function setupProjectFilters() {
         btn.addEventListener('click', () => {
             if (value === activeProjectFilter) return;
             activeProjectFilter = value;
-            showingAllOthers = false; // start collapsed again for the new filter's results
             bar.querySelectorAll('.filter-btn').forEach(b => {
                 const isActive = b === btn;
                 b.classList.toggle('active', isActive);
@@ -1452,8 +1520,8 @@ function setupContactModal() {
 let caseStudyLastTrigger = null;
 
 // ---- Headline architecture diagram ----
-// A pure-SVG, self-drawing flow diagram for the two headline projects (see the
-// `flagship || spotlight` check in renderCaseStudy below), built directly from each project's
+// A pure-SVG, self-drawing flow diagram for the headline projects (see the projectTier()
+// check in renderCaseStudy below), built directly from each project's
 // own `architecture` array in projects.json — no separate diagram data file to keep in sync
 // with the case study text.
 // Every node is DIAGRAM_NODE_H tall and every connector exactly DIAGRAM_GAP long, which is
@@ -1599,7 +1667,7 @@ function renderCaseStudy(project) {
         <h3 class="modal-title" id="case-study-modal-title">${escapeHtml(project.title)}</h3>
         ${cs.tagline ? `<p class="cs-tagline">${escapeHtml(cs.tagline)}</p>` : ''}
         ${problemParas ? `<div class="cs-block"><h4 class="cs-eyebrow">The problem</h4>${problemParas}</div>` : ''}
-        ${archItems ? `<div class="cs-block"><h4 class="cs-eyebrow">Architecture</h4>${project.flagship || project.spotlight ? buildArchitectureDiagram(cs.architecture) : ''}<ol class="cs-arch">${archItems}</ol></div>` : ''}
+        ${archItems ? `<div class="cs-block"><h4 class="cs-eyebrow">Architecture</h4>${projectTier(project) ? buildArchitectureDiagram(cs.architecture) : ''}<ol class="cs-arch">${archItems}</ol></div>` : ''}
         ${decisions ? `<div class="cs-block"><h4 class="cs-eyebrow">Key decisions</h4>${decisions}</div>` : ''}
         ${cs.status ? `<p class="cs-status">${escapeHtml(cs.status)}</p>` : ''}
         <div class="project-actions cs-actions">${liveBtn}${sourceBtn}</div>
@@ -1626,10 +1694,10 @@ function setupCaseStudyModal() {
     const openCaseStudy = (project, trigger) => {
         caseStudyLastTrigger = trigger || null;
         // Same tier class the card carries — the palette rides in on inherited custom properties
-        // (see .tier-flagship / .tier-spotlight in style.css), so nothing here names a colour.
+        // (see the .tier-* blocks in style.css), so nothing here names a colour.
         // Toggled rather than added, since one modal element is reused for every project.
-        body.classList.toggle('tier-flagship', !!project.flagship);
-        body.classList.toggle('tier-spotlight', !!project.spotlight);
+        const tier = projectTier(project);
+        Object.keys(PROJECT_TIERS).forEach(t => body.classList.toggle(`tier-${t}`, t === tier));
         body.innerHTML = renderCaseStudy(project);
         bindMagneticButtons();   // Live / Source buttons inside the freshly built body
         setupArchitectureDiagram(body);   // no-op unless this project has one (see renderCaseStudy)
@@ -1832,7 +1900,7 @@ function setupCardTilt() {
     if (!interactionsAllowed) return;
     const MAX_TILT = 4;   // degrees
 
-    const grids = ['featured-project-grid', 'other-project-grid']
+    const grids = ['featured-project-grid', 'more-project-grid']
         .map(id => document.getElementById(id))
         .filter(Boolean);
 
@@ -1889,12 +1957,12 @@ function setupCardTilt() {
 // combobox with a listbox popup" ARIA pattern — so a screen reader announces the highlighted
 // result without ever leaving the text field.
 
-// Finds a project's card, resetting the active filter and expanding "Other Projects" first if
-// that's the only reason it isn't currently rendered. Mirrors the exact filter/pagination
-// state buildProjectCard's grid already tracks, rather than searching the DOM for a card that
-// may simply not exist yet.
+// Finds a project's card (or its archive row), resetting the active filter and opening the
+// archive first if that's the only reason it isn't currently rendered or visible. Mirrors the
+// exact filter/archive state the grid already tracks, rather than searching the DOM for a card
+// that may simply not exist yet.
 function jumpToProject(project) {
-    const findCard = () => document.querySelector(`.project-card[data-project-id="${CSS.escape(project.id)}"]`);
+    const findCard = () => document.querySelector(`[data-project-id="${CSS.escape(project.id)}"]`);
 
     const reveal = () => {
         const card = findCard();
@@ -1920,14 +1988,18 @@ function jumpToProject(project) {
         });
         needsRerender = true;
     }
-    if (!project.featured && !showingAllOthers) {
-        showingAllOthers = true;
-        needsRerender = true;
+    // Opening the archive needs no re-render — the rows are already in the DOM, just hidden —
+    // so it only joins the filter reset above when that one is happening anyway.
+    if (projectSection(project) === 'archive' && !archiveOpen) {
+        archiveOpen = true;
+        if (!needsRerender) {
+            updateArchiveControl(getVisibleProjects(activeProjectFilter)
+                .filter(p => projectSection(p) === 'archive').length);
+        }
     }
 
     if (needsRerender) {
         renderProjectCards(activeProjectFilter, { animateGrid: true });
-        updateShowMoreControl(getVisibleProjects(activeProjectFilter).filter(p => !p.featured).length);
         setTimeout(reveal, 340); // outlast renderProjectCards' own 300ms filter-fade timeout
     } else {
         reveal();
@@ -1944,10 +2016,12 @@ let cmdkStatusTimer;
 function buildStaticCommands() {
     return [
         { id: 'nav-about', group: 'Navigate', title: 'About', sub: 'The intro', keywords: 'about intro home hero', run: () => jumpToFraction(0) },
-        { id: 'nav-backend', group: 'Navigate', title: 'Backend & APIs', sub: 'FastAPI, Django', keywords: 'backend api fastapi django server', run: () => jumpToFraction(0.34) },
+        { id: 'nav-backend', group: 'Navigate', title: 'Backend & APIs', sub: 'FastAPI, PostgreSQL', keywords: 'backend api fastapi postgresql postgres server', run: () => jumpToFraction(0.34) },
         { id: 'nav-frontend', group: 'Navigate', title: 'Frontend', sub: 'JavaScript, no framework', keywords: 'frontend js javascript ui', run: () => jumpToFraction(0.62) },
         { id: 'nav-connect', group: 'Navigate', title: 'Connect', sub: 'Open to work', keywords: 'connect open to work hire', run: () => jumpToFraction(0.80) },
         { id: 'nav-work', group: 'Navigate', title: 'Selected Work', sub: 'The project grid', keywords: 'work projects portfolio grid selected', run: () => jumpToFraction(1.05) },
+        { id: 'nav-archive', group: 'Navigate', title: 'Project archive', sub: 'Everything older, grouped', keywords: 'archive older other more projects django flask list', run: () => jumpToSection('archive-section', { openArchive: true }) },
+        { id: 'nav-certificates', group: 'Navigate', title: 'Certificates', sub: 'Harvard CS50P, Cambridge English', keywords: 'certificates certifications courses harvard cs50 cambridge english azure exam', run: () => jumpToSection('certificates') },
         { id: 'action-email', group: 'Actions', title: 'Email me', sub: 'Open the contact form', keywords: 'email contact mail reach hire message', run: () => document.getElementById('contact-btn')?.click() },
         {
             id: 'action-motion', group: 'Actions',
@@ -1980,7 +2054,7 @@ function filterCommands(query) {
     const q = query.trim().toLowerCase();
 
     if (!q) {
-        // Empty palette: every static command, plus a handful of projects (flagship/featured
+        // Empty palette: every static command, plus a handful of projects (headline ones
         // first, via sortProjects) so it reads as useful rather than just a settings menu.
         return [...staticCommands, ...projectCommands.slice(0, 5)];
     }
@@ -2198,7 +2272,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     await loadProjects(); // fetch projects.json — see PROJECTS above
     setupProjectFilters();
-    setupShowMoreButton();
+    setupArchiveToggle();
     renderProjectCards('all');
     bindMagneticButtons();                       // pick up the freshly rendered project buttons
     if (reducedMotion) revealAllProjectCards();  // no scroll observer payoff on a static page

@@ -49,9 +49,11 @@ than pulled from a CDN (see [Engineering notes](#engineering-notes)).
 
 **Project showcase**
 - Fully data-driven from `projects.json` — add one object, get a new card, no HTML/JS edits
-- Featured / Other split, with "Other Projects" paginated behind a "Show More" toggle
-- Two headline tiers (`flagship` / `spotlight`) with a travelling rim ember and an in-modal case
-  study, both driven entirely from `projects.json`
+- Three levels of attention: three headline cards, a short "Also worth a look" row, and a
+  collapsed archive that lists everything else, grouped by category
+- Three headline tiers (`flagship` / `spotlight` / `showcase`) with a travelling rim ember and an
+  in-modal case study, all driven from `projects.json`
+- A certificates section, static markup, with exams in progress marked as such
 - Auto-generated language filter bar (adding a project with a new language adds its filter)
 - Self-hosted tech-stack icons per card, with an automatic fallback icon for anything new
 
@@ -154,21 +156,25 @@ Append one object to `projects.json` — nothing else needs to change:
   ],
   "liveUrl": "https://example.com",
   "sourceUrl": "https://github.com/AndrewTechTips/my-new-project",
-  "featured": false,
-  "priority": 31
+  "section": "archive",
+  "category": "Backend & APIs",
+  "priority": 33
 }
 ```
 
-- `featured: true` pins a project to the always-visible "Featured Work" section.
-- `flagship: true` and `spotlight: true` are the two headline tiers above it — one project each.
-  They get a lit rim instead of a plain border (amber for the flagship, rim-light blue for the
-  spotlight), the case study's own tagline as a lead line on the card, and the self-drawing
-  architecture diagram inside their case study. Colour is the only difference between them: both
-  read their palette from `.tier-flagship` / `.tier-spotlight` in `style.css`, so a third tier is
-  a block of custom properties, not another copy of the treatment.
+- `section` places the project: `"featured"` (the headline row), `"more"` (the "Also worth a
+  look" row under it) or `"archive"` (the collapsed list). Anything else, or nothing, means archive.
+- `category` groups archive rows; groups appear in the order their first project does.
+- `tier` (`"flagship"`, `"spotlight"` or `"showcase"`) is for headline projects. They get a lit
+  rim instead of a plain border (amber, rim-light blue, verdigris), the case study's own tagline
+  as a lead line on the card, and the self-drawing architecture diagram inside their case study.
+  Colour is the only difference between them: each reads its palette from its `.tier-*` block in
+  `style.css`, so another tier is a block of custom properties plus one entry in `PROJECT_TIERS`
+  in `main.js`, not another copy of the treatment.
 - `caseStudy` is optional; a project carrying one gets a "Case Study" button and a modal built
   from `tagline` / `problem` / `architecture` / `decisions` / `status`.
-- `priority` orders everything else (lower = earlier); omit it and the project just sorts last.
+- `priority` orders projects within their section (lower = earlier); omit it and the project
+  sorts last.
 - `tech[].type` of `"language"` automatically gets a filter button in the filter bar; anything
   else renders as a plain tech pill.
 - Tech icons resolve from `assets/icons/<name>.svg`; anything without a matching file falls

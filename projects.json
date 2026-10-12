@@ -2,7 +2,7 @@
   {
     "id": "iron-log",
     "title": "Iron Log",
-    "description": "Most calorie trackers turn a five-second task into a search-and-scroll chore, so people give up within a week. Iron Log turns a photo of a plate into per-ingredient macros — grounded in USDA and Open Food Facts data, with an arithmetic check that keeps a fast, cheap model honest. Three-provider AI failover, deterministic forecasting, a zero-framework JS PWA; solo-built with FastAPI and Supabase, with a Play Store release planned.",
+    "description": "Most calorie trackers turn a five-second task into a search-and-scroll chore, so people give up within a week. Iron Log turns a photo of a plate into per-ingredient calories and macros in one model call, then runs plain arithmetic over the answer to catch numbers no real food could have. The most useful thing I did here was switch off a database lookup I had already built: measured on real meals, it made the numbers worse. FastAPI on a VPS, Supabase, a JavaScript PWA with zero runtime dependencies, and around 700 tests.",
     "tech": [
       { "name": "python", "type": "language" },
       { "name": "javascript", "type": "language" },
@@ -11,29 +11,29 @@
     ],
     "liveUrl": "https://andrewtechtips.github.io/calorie-tracker/",
     "sourceUrl": "https://github.com/AndrewTechTips/calorie-tracker",
-    "featured": true,
-    "flagship": true,
+    "section": "featured",
+    "tier": "flagship",
     "priority": 0,
     "caseStudy": {
-      "tagline": "Turn a photo of a plate into trustworthy macros — and keep a cheap model honest.",
+      "tagline": "A photo of a plate in, per-ingredient macros out, and every accuracy claim measured rather than assumed.",
       "problem": [
         "Most calorie trackers fail for one reason: logging a meal takes too long. You search a database, scroll past forty near-matches, guess a portion, and repeat for every ingredient. People manage it for a week and quit.",
-        "I wanted logging a meal to cost one photo and a glance. But a photo-to-macros pipeline is only worth building if the numbers are right, and vision models are confidently wrong often enough to burn through a user's trust in a handful of bad guesses."
+        "I wanted logging a meal to cost one photo and a glance. That is only worth building if the numbers are right, and looking right is not a measurement. The part of this pipeline I was proudest of turned out, once I measured it, to be the part making the numbers wrong."
       ],
       "architecture": [
-        { "step": "Capture and submit", "detail": "A zero-framework JavaScript PWA takes the photo and posts it to a FastAPI backend. No build step, installable, and it still opens to your history offline." },
-        { "step": "Three-provider AI failover", "detail": "The image goes to a fast, inexpensive vision model first. If a provider errors, rate-limits, or returns malformed output, the request falls through to the next of three providers before it gives up. One flaky vendor never takes the feature down." },
-        { "step": "Grounding in real food data", "detail": "Model output is reconciled against USDA FoodData Central and Open Food Facts rather than trusted directly, so per-ingredient macros come from an actual nutritional database instead of a guess." },
-        { "step": "Arithmetic verification", "detail": "A deterministic check re-adds the per-ingredient numbers and compares them to the reported totals. If the model's own math doesn't reconcile, the answer is rejected and re-requested. This is the piece that lets me run a cheap model without inheriting its arithmetic mistakes." },
-        { "step": "Persistence and forecasting", "detail": "Entries land in Supabase on Postgres. A deterministic forecasting routine projects weight trend from intake history — the same inputs always produce the same projection, so the line doesn't jump between refreshes." }
+        { "step": "Capture and submit", "detail": "A JavaScript PWA with zero runtime dependencies takes the photo, or a typed description in English or Romanian, and posts it to a FastAPI backend. It installs like an app and still opens to your history offline." },
+        { "step": "Identify, weigh, price at once", "detail": "Gemini Flash names each ingredient, estimates its weight against everyday reference portions like a fist of rice, and returns its macros in the same call. Mistral is reached only on a genuine Google-side outage, and its answers come labelled so the user knows to double-check them." },
+        { "step": "Deterministic sanity checks", "detail": "Every ingredient passes through plain arithmetic before anyone sees it: macros can't weigh more than the food, and calories can't fall below what those macros imply or rise above pure fat's energy density. A broken answer is caught by maths, not by asking the model to check itself." },
+        { "step": "Barcodes skip the AI entirely", "detail": "A packaged food goes through the browser's BarcodeDetector straight to Open Food Facts. Deterministic, unlimited, and it never spends an AI call." },
+        { "step": "Persistence and forecasting", "detail": "Entries land in Supabase on Postgres, with every query scoped to the signed-in user. The weight trend comes from an EMA and a TDEE regression over your own history, so the same inputs always give the same projection and the line doesn't jump between refreshes." }
       ],
       "decisions": [
         { "choice": "FastAPI instead of Django", "rationale": "The backend is almost entirely JSON endpoints and orchestration of outbound API calls. FastAPI's async model fits fanning one request out to several AI providers, and I needed neither an ORM nor an admin.", "tradeoff": "I gave up Django's built-in auth and migrations and assembled those parts myself." },
-        { "choice": "Verify a cheap model rather than pay for a bigger one", "rationale": "A frontier model would still be wrong sometimes and cost an order of magnitude more per call. An arithmetic reconciliation check catches the failure that actually matters — numbers that don't add up — for almost nothing.", "tradeoff": "A strict tolerance rejects some correct answers too, so I spend a few extra calls to hold the trust bar high." },
-        { "choice": "A zero-framework PWA", "rationale": "The interface is a camera button, a list, and a chart. A framework and its build pipeline would have been more moving parts than the product needed.", "tradeoff": "Routing and state are hand-rolled; past a certain feature count I would want a framework back." },
-        { "choice": "Deterministic forecasting", "rationale": "People check their trend constantly. If it shifts when the underlying data did not, the whole feature feels broken.", "tradeoff": "A probabilistic model could show uncertainty bands, which strict determinism gives up." }
+        { "choice": "Switch off a layer I had already built", "rationale": "Every ingredient used to be looked up in USDA and Open Food Facts before the model's estimate was trusted. Measured on 20 real meal descriptions, that layer took the median calorie error from under 3% to 16.5%. Its matcher ranked rows by title and never read their numbers, so Romanian telemea cheese came back priced as USDA's \"Bread, cheese\".", "tradeoff": "Scanned food no longer carries a \"from USDA\" badge, which looked more trustworthy than it was. The layer stays in the code behind a flag, in case a better retrieval design earns it back." },
+        { "choice": "Size the token budget from recorded calls", "rationale": "Hidden reasoning tokens draw from the same budget as the visible answer, so a tight limit cut replies off mid-JSON, and a truncated call still bills in full before paying for a retry. Sizing the reserve from 33 recorded calls took truncation on the hardest test photo from 50% to 0% and lowered the mean cost per scan from $0.0144 to $0.0088.", "tradeoff": "Every call reserves room it may not use. Cheaper on average, not on every single request." },
+        { "choice": "A zero-framework PWA", "rationale": "Every screen is hand-written ES modules with no framework underneath, and nothing ships to the browser that I didn't write. A build step went in only when it earned one: Vite, purely so content-hashed filenames could replace a cache-busting convention I was keeping by hand and getting wrong.", "tradeoff": "Routing and state are hand-rolled, which takes discipline at this size. A framework would have handed me those for free." }
       ],
-      "status": "Solo-built. Live on the web, with a Play Store release planned."
+      "status": "Solo-built. Live on the web, with the backend on an always-on VPS behind Traefik and a Play Store release planned."
     }
   },
   {
@@ -48,8 +48,8 @@
     ],
     "liveUrl": "https://andrewtechtips.github.io/social-feed-application/",
     "sourceUrl": "https://github.com/AndrewTechTips/social-feed-application",
-    "featured": true,
-    "spotlight": true,
+    "section": "featured",
+    "tier": "spotlight",
     "priority": 1,
     "caseStudy": {
       "tagline": "A feed anyone can read, an API nobody can talk their way into — and a demo that can't drift from either.",
@@ -74,78 +74,41 @@
     }
   },
   {
-    "id": "web-automation-engine",
-    "title": "Web Automation Engine",
-    "description": "A desktop automation tool with a Tkinter GUI that drives browser actions through Selenium. Uses explicit waits and background threading so the UI stays responsive during login, form submission, and file tasks.",
+    "id": "iot-vision-hub",
+    "title": "IoT Vision Hub",
+    "description": "A self-hosted security hub for the webcams and IP cameras you already own. It began as a small OpenCV script that emailed a photo whenever something moved, sunsets included. Now a model running on the hub tells people from shadows, a tracker follows them across the frame, and an alert reaches the phone within a second with the clip attached. FastAPI and PostgreSQL underneath, a vanilla JS dashboard that installs as an app, one Docker image for amd64 and arm64, and over a thousand tests at 99% coverage.",
     "tech": [
       { "name": "python", "type": "language" },
-      { "name": "selenium", "type": "tool" }
+      { "name": "javascript", "type": "language" },
+      { "name": "fastapi", "type": "tool" },
+      { "name": "opencv", "type": "tool" },
+      { "name": "postgresql", "type": "tool" }
     ],
-    "liveUrl": null,
-    "sourceUrl": "https://github.com/AndrewTechTips/Browser-Automation",
-    "featured": true,
+    "liveUrl": "https://andrewtechtips.github.io/iot-vision-hub/",
+    "sourceUrl": "https://github.com/AndrewTechTips/iot-vision-hub",
+    "section": "featured",
+    "tier": "showcase",
     "priority": 2,
     "caseStudy": {
-      "tagline": "A desktop GUI that drives a real browser and never freezes.",
+      "tagline": "Tell people from shadows, follow them across the frame, and reach a phone within a second, clip attached.",
       "problem": [
-        "Automation scripts are quick to write and painful to hand to someone else. They live in a terminal, they stall on a slow page with no feedback, and the moment you bolt a GUI on the naive way, every click freezes the window until Selenium returns.",
-        "I wanted a tool a non-programmer could actually run — log in, submit forms, move files — that stayed responsive from start to finish."
+        "The first version was one OpenCV script: watch the webcam, and when something moves, email a photo. It worked, mostly. One person walking past sent five emails, every sunset counted as motion, and the only place to see what had happened was my laptop.",
+        "The rebuild had to answer what anyone with a camera actually asks. Was that a person or a tree? Where did they go? Did the alert arrive, and can I watch the clip from my phone? And all of it without sending a single frame to somebody else's cloud."
       ],
       "architecture": [
-        { "step": "Tkinter control surface", "detail": "A tabbed window collects credentials and task parameters. It is the only thing the user touches." },
-        { "step": "Automation on a background thread", "detail": "Every Selenium session runs off the main thread, so the UI event loop keeps painting, the window stays responsive, and a run can report progress or be cancelled instead of locking up." },
-        { "step": "Explicit waits, not sleeps", "detail": "Each step waits on a specific condition — element present, clickable, gone stale — rather than a fixed delay, so the script adapts to a slow network instead of failing on it or wasting time on a fast one." },
-        { "step": "Thread-safe status reporting", "detail": "Worker threads pass state back through a queue that the main loop drains on a timer, so no Tkinter widget is ever touched from a background thread." }
+        { "step": "A thread per camera", "detail": "Each webcam, RTSP camera or video file gets its own thread for capture, motion detection and clip encoding. OpenCV releases the GIL, so the cameras run in parallel and the asyncio event loop only moves bytes. A test runs live cameras under asyncio's debug mode and fails if any callback holds the loop for more than 50 ms." },
+        { "step": "One shared person detector", "detail": "YOLOX-s runs locally on ONNX Runtime. A check costs about 0.3 s of a core, far too slow to run inside a camera thread, so one background thread serves every camera and its answers label the tracks the cameras are already following." },
+        { "step": "Tracking and zone rules", "detail": "Motion is matched from frame to frame by overlap, in about 10 µs. Zone rules look at people's feet rather than their boxes: stay in the Doorstep area too long, or cross the line into the garden, and the rule fires." },
+        { "step": "Store first, then publish", "detail": "Every event is written to PostgreSQL with a clean and an annotated snapshot and a WebM clip that starts before the motion did. Only then does it go out on the event bus to the dashboard. Live frames are latest-frame-wins; events are never dropped." },
+        { "step": "Alerts from an outbox", "detail": "Web push, email, Telegram and HMAC-signed webhooks all read from one outbox table, with at-least-once delivery, retries with growing delays and a cooldown per camera. An alert queued before a restart is still sent after it." }
       ],
       "decisions": [
-        { "choice": "Threading over multiprocessing", "rationale": "The work is I/O-bound — waiting on the network and the browser — so the GIL is not the constraint, and threads share state with the GUI cheaply.", "tradeoff": "CPU-heavy post-processing would need a process pool, which this design does not cover." },
-        { "choice": "Explicit waits everywhere", "rationale": "Fixed sleeps are the number one cause of flaky automation. Condition-based waits were the single biggest reliability win in the project.", "tradeoff": "Every interaction needs a considered wait condition — more code up front than a one-line sleep." },
-        { "choice": "Ship it as a desktop app", "rationale": "The people who need it do not have Python installed and should not have to. A window with labelled fields is an interface they already know.", "tradeoff": "Packaging and cross-platform GUI quirks became my problem instead of theirs." }
-      ]
-    }
-  },
-  {
-    "id": "weather-data-api",
-    "title": "Weather Data API",
-    "description": "A Flask REST API for querying historical climate data from the European Climate Assessment dataset, with clean JSON endpoints and automatic unit conversion.",
-    "tech": [
-      { "name": "python", "type": "language" },
-      { "name": "flask", "type": "tool" }
-    ],
-    "liveUrl": null,
-    "sourceUrl": "https://github.com/AndrewTechTips/European-Climate-Archive-API",
-    "featured": true,
-    "priority": 3
-  },
-  {
-    "id": "django-restaurant-menu",
-    "title": "Django Restaurant Menu & Digital Ordering",
-    "description": "A digital ordering system for restaurants, built with Django. Manages the cart in the session, generates QR codes for tables, and gives staff a live inventory dashboard through the Django admin.",
-    "tech": [
-      { "name": "python", "type": "language" },
-      { "name": "django", "type": "tool" }
-    ],
-    "liveUrl": null,
-    "sourceUrl": "https://github.com/AndrewTechTips/Django-Restaurant-Menu",
-    "featured": true,
-    "priority": 4,
-    "caseStudy": {
-      "tagline": "QR to table, cart to kitchen — a full ordering loop on Django's built-ins.",
-      "problem": [
-        "A restaurant wants diners to scan a code at the table, browse the menu, and order without an app or a waiter. Staff want to watch stock fall in real time without learning new software.",
-        "The interesting constraint was doing both without a heavy single-page app and without standing up a second system just for staff."
+        { "choice": "Threads, not processes", "rationale": "OpenCV does its heavy work in C++ with the GIL released, so a long-lived thread per camera keeps the device open without giving up parallelism. I benchmarked it: the same throughput as a process per camera, and three times that of a process pool per frame.", "tradeoff": "The cameras belong to one process, so the hub runs as exactly one Uvicorn worker. Scaling across machines would need a different design, which is written down and deliberately deferred." },
+        { "choice": "Detections travel as data, the browser draws them", "rationale": "Boxes ride in a header on each MJPEG frame and the dashboard draws them, so they line up with the exact picture and the video itself stays clean. A separate WebSocket message would arrive early or late, and the box would trail the person.", "tradeoff": "The overlay only exists where the dashboard draws it. Any other MJPEG client gets clean video and nothing more." },
+        { "choice": "Fail open when the model can't run", "rationale": "If the person model is missing or crashes, every camera falls back to alerting on plain motion and the logs say why. A missed intruder costs more than a false alarm.", "tradeoff": "A broken model means a noisy night of alerts instead of a quiet one." },
+        { "choice": "VP8 clips from OpenCV, no ffmpeg", "rationale": "OpenCV's Linux wheels ship without an H.264 encoder. VP8 in WebM plays in every current browser, costs 6 to 17 ms a frame and only while an event is recording, and needs no extra process or dependency.", "tradeoff": "OpenCV gives no bitrate control for VP8, so frames are blurred slightly before encoding. That keeps a noisy camera at 0.6 to 1.5 MB per 10 seconds instead of 3.4 to 7.5." }
       ],
-      "architecture": [
-        { "step": "Per-table QR codes", "detail": "Each table has a generated QR code carrying its table ID. Scanning drops the diner onto the menu with their table already tied to the session." },
-        { "step": "Session-based cart", "detail": "The cart lives in the Django session rather than the database. An anonymous diner needs no account, and an abandoned cart expires on its own with no cleanup job to run." },
-        { "step": "Orders as models", "detail": "Placing an order writes ordinary Django models. From there the ORM handles order history, per-item totals, and status changes." },
-        { "step": "Staff dashboard through Django admin", "detail": "Inventory and live orders are run from a customised Django admin instead of a bespoke back office. Staff get search, filters, and permissions for free; I tailored the list views and actions rather than building CRUD by hand." }
-      ],
-      "decisions": [
-        { "choice": "Session cart instead of a database cart", "rationale": "Diners are anonymous and short-lived. Session storage removes the account step and cleans up after itself.", "tradeoff": "A cart does not survive switching devices mid-order — an acceptable limit for dining in." },
-        { "choice": "Django admin as the staff tool", "rationale": "The staff-facing job is exactly what admin is good at: list, filter, edit, permission. A custom dashboard would have been weeks of work for a worse result.", "tradeoff": "Admin styling and workflow only bend so far; a very custom staff experience would eventually outgrow it." },
-        { "choice": "Server-rendered pages over a SPA", "rationale": "The menu is mostly static content with a small interactive cart. Server rendering keeps it quick on a phone on restaurant Wi-Fi and easy to reason about.", "tradeoff": "Richer real-time behaviour would need client-side JavaScript I chose not to add yet." }
-      ]
+      "status": "Solo-built. The live demo is the real dashboard running against recorded footage from four cameras; the hub ships as one Docker image for amd64 and arm64, Raspberry Pi included."
     }
   },
   {
@@ -159,8 +122,8 @@
     ],
     "liveUrl": "https://numerical-flow.streamlit.app/",
     "sourceUrl": "https://github.com/AndrewTechTips/Project_Calcul_Numeric",
-    "featured": true,
-    "priority": 5,
+    "section": "more",
+    "priority": 3,
     "caseStudy": {
       "tagline": "Exact solutions where they exist, numerical ones where they don't — plotted step by step.",
       "problem": [
@@ -181,6 +144,96 @@
     }
   },
   {
+    "id": "web-automation-engine",
+    "title": "Web Automation Engine",
+    "description": "A desktop automation tool with a Tkinter GUI that drives browser actions through Selenium. Uses explicit waits and background threading so the UI stays responsive during login, form submission, and file tasks.",
+    "tech": [
+      { "name": "python", "type": "language" },
+      { "name": "selenium", "type": "tool" }
+    ],
+    "liveUrl": null,
+    "sourceUrl": "https://github.com/AndrewTechTips/Browser-Automation",
+    "section": "more",
+    "priority": 4,
+    "caseStudy": {
+      "tagline": "A desktop GUI that drives a real browser and never freezes.",
+      "problem": [
+        "Automation scripts are quick to write and painful to hand to someone else. They live in a terminal, they stall on a slow page with no feedback, and the moment you bolt a GUI on the naive way, every click freezes the window until Selenium returns.",
+        "I wanted a tool a non-programmer could actually run — log in, submit forms, move files — that stayed responsive from start to finish."
+      ],
+      "architecture": [
+        { "step": "Tkinter control surface", "detail": "A tabbed window collects credentials and task parameters. It is the only thing the user touches." },
+        { "step": "Automation on a background thread", "detail": "Every Selenium session runs off the main thread, so the UI event loop keeps painting, the window stays responsive, and a run can report progress or be cancelled instead of locking up." },
+        { "step": "Explicit waits, not sleeps", "detail": "Each step waits on a specific condition — element present, clickable, gone stale — rather than a fixed delay, so the script adapts to a slow network instead of failing on it or wasting time on a fast one." },
+        { "step": "Thread-safe status reporting", "detail": "Worker threads pass state back through a queue that the main loop drains on a timer, so no Tkinter widget is ever touched from a background thread." }
+      ],
+      "decisions": [
+        { "choice": "Threading over multiprocessing", "rationale": "The work is I/O-bound — waiting on the network and the browser — so the GIL is not the constraint, and threads share state with the GUI cheaply.", "tradeoff": "CPU-heavy post-processing would need a process pool, which this design does not cover." },
+        { "choice": "Explicit waits everywhere", "rationale": "Fixed sleeps are the number one cause of flaky automation. Condition-based waits were the single biggest reliability win in the project.", "tradeoff": "Every interaction needs a considered wait condition — more code up front than a one-line sleep." },
+        { "choice": "Ship it as a desktop app", "rationale": "The people who need it do not have Python installed and should not have to. A window with labelled fields is an interface they already know.", "tradeoff": "Packaging and cross-platform GUI quirks became my problem instead of theirs." }
+      ]
+    }
+  },
+  {
+    "id": "battleship",
+    "title": "BattleShip",
+    "description": "A browser-based Battleship game written in object-oriented JavaScript. Includes drag-and-drop ship placement, a randomized CPU opponent, and full Jest test coverage.",
+    "tech": [
+      { "name": "javascript", "type": "language" },
+      { "name": "jest", "type": "tool" }
+    ],
+    "liveUrl": "https://andrewtechtips.github.io/Project-BattleShip/",
+    "sourceUrl": "https://github.com/AndrewTechTips/Project-BattleShip",
+    "section": "more",
+    "priority": 5
+  },
+  {
+    "id": "django-restaurant-menu",
+    "title": "Django Restaurant Menu & Digital Ordering",
+    "description": "A digital ordering system for restaurants, built with Django. Manages the cart in the session, generates QR codes for tables, and gives staff a live inventory dashboard through the Django admin.",
+    "tech": [
+      { "name": "python", "type": "language" },
+      { "name": "django", "type": "tool" }
+    ],
+    "liveUrl": null,
+    "sourceUrl": "https://github.com/AndrewTechTips/Django-Restaurant-Menu",
+    "section": "archive",
+    "category": "Backend & APIs",
+    "priority": 6,
+    "caseStudy": {
+      "tagline": "QR to table, cart to kitchen — a full ordering loop on Django's built-ins.",
+      "problem": [
+        "A restaurant wants diners to scan a code at the table, browse the menu, and order without an app or a waiter. Staff want to watch stock fall in real time without learning new software.",
+        "The interesting constraint was doing both without a heavy single-page app and without standing up a second system just for staff."
+      ],
+      "architecture": [
+        { "step": "Per-table QR codes", "detail": "Each table has a generated QR code carrying its table ID. Scanning drops the diner onto the menu with their table already tied to the session." },
+        { "step": "Session-based cart", "detail": "The cart lives in the Django session rather than the database. An anonymous diner needs no account, and an abandoned cart expires on its own with no cleanup job to run." },
+        { "step": "Orders as models", "detail": "Placing an order writes ordinary Django models. From there the ORM handles order history, per-item totals, and status changes." },
+        { "step": "Staff dashboard through Django admin", "detail": "Inventory and live orders are run from a customised Django admin instead of a bespoke back office. Staff get search, filters, and permissions for free; I tailored the list views and actions rather than building CRUD by hand." }
+      ],
+      "decisions": [
+        { "choice": "Session cart instead of a database cart", "rationale": "Diners are anonymous and short-lived. Session storage removes the account step and cleans up after itself.", "tradeoff": "A cart does not survive switching devices mid-order — an acceptable limit for dining in." },
+        { "choice": "Django admin as the staff tool", "rationale": "The staff-facing job is exactly what admin is good at: list, filter, edit, permission. A custom dashboard would have been weeks of work for a worse result.", "tradeoff": "Admin styling and workflow only bend so far; a very custom staff experience would eventually outgrow it." },
+        { "choice": "Server-rendered pages over a SPA", "rationale": "The menu is mostly static content with a small interactive cart. Server rendering keeps it quick on a phone on restaurant Wi-Fi and easy to reason about.", "tradeoff": "Richer real-time behaviour would need client-side JavaScript I chose not to add yet." }
+      ]
+    }
+  },
+  {
+    "id": "weather-data-api",
+    "title": "Weather Data API",
+    "description": "A Flask REST API for querying historical climate data from the European Climate Assessment dataset, with clean JSON endpoints and automatic unit conversion.",
+    "tech": [
+      { "name": "python", "type": "language" },
+      { "name": "flask", "type": "tool" }
+    ],
+    "liveUrl": null,
+    "sourceUrl": "https://github.com/AndrewTechTips/European-Climate-Archive-API",
+    "section": "archive",
+    "category": "Backend & APIs",
+    "priority": 7
+  },
+  {
     "id": "django-job-application-portal",
     "title": "Django Job Application Portal",
     "description": "A career portal built with Django. Sends automated email confirmations, includes an admin dashboard with CSV exports, and runs on a SQLite backend.",
@@ -190,33 +243,8 @@
     ],
     "liveUrl": null,
     "sourceUrl": "https://github.com/AndrewTechTips/Django-Form",
-    "featured": true,
-    "priority": 6
-  },
-  {
-    "id": "thief-detection-notifier",
-    "title": "Thief Detection Notifier",
-    "description": "A motion detection system built with Python and OpenCV. Buffers frames in memory and uses background threads to email a snapshot the moment it detects movement.",
-    "tech": [
-      { "name": "python", "type": "language" },
-      { "name": "opencv", "type": "tool" }
-    ],
-    "liveUrl": null,
-    "sourceUrl": "https://github.com/AndrewTechTips/Thief-Detection-Notifier",
-    "featured": true,
-    "priority": 7
-  },
-  {
-    "id": "binary-search-tree",
-    "title": "Binary Search Tree",
-    "description": "A balanced binary search tree implemented from scratch in ES6. Covers node insertion, deletion, and BFS/DFS traversal, with full Jest test coverage.",
-    "tech": [
-      { "name": "javascript", "type": "language" },
-      { "name": "jest", "type": "tool" }
-    ],
-    "liveUrl": null,
-    "sourceUrl": "https://github.com/AndrewTechTips/Binary-Search-Trees",
-    "featured": true,
+    "section": "archive",
+    "category": "Backend & APIs",
     "priority": 8
   },
   {
@@ -229,32 +257,23 @@
     ],
     "liveUrl": null,
     "sourceUrl": "https://github.com/AndrewTechTips/Flask-Form",
-    "featured": false,
+    "section": "archive",
+    "category": "Backend & APIs",
     "priority": 9
   },
   {
-    "id": "knights-travails",
-    "title": "Knight's Travails",
-    "description": "An algorithm that finds the shortest path between two squares on a chessboard using breadth-first search and a queue-based structure.",
+    "id": "tour-event-scraper",
+    "title": "Tour Event Scraper",
+    "description": "A scraping service that checks for new concert listings on a schedule, deduplicates results with SQLite, and sends an email alert when it finds a new tour date.",
     "tech": [
-      { "name": "javascript", "type": "language" }
+      { "name": "python", "type": "language" },
+      { "name": "sqlite", "type": "tool" }
     ],
     "liveUrl": null,
-    "sourceUrl": "https://github.com/AndrewTechTips/Knight-Travails-JS",
-    "featured": false,
+    "sourceUrl": "https://github.com/AndrewTechTips/Scrapify",
+    "section": "archive",
+    "category": "Backend & APIs",
     "priority": 10
-  },
-  {
-    "id": "hashmap",
-    "title": "HashMap",
-    "description": "A hash map implemented from scratch in ES6, handling collisions with separate chaining and auto-resizing based on a set load factor.",
-    "tech": [
-      { "name": "javascript", "type": "language" }
-    ],
-    "liveUrl": null,
-    "sourceUrl": "https://github.com/AndrewTechTips/HashMap-Implementation",
-    "featured": false,
-    "priority": 11
   },
   {
     "id": "student-management-system",
@@ -267,21 +286,23 @@
     ],
     "liveUrl": null,
     "sourceUrl": "https://github.com/AndrewTechTips/Student-Management-System",
-    "featured": false,
-    "priority": 12
+    "section": "archive",
+    "category": "Python tools & desktop apps",
+    "priority": 11
   },
   {
-    "id": "tour-event-scraper",
-    "title": "Tour Event Scraper",
-    "description": "A scraping service that checks for new concert listings on a schedule, deduplicates results with SQLite, and sends an email alert when it finds a new tour date.",
+    "id": "luxury-booking-engine",
+    "title": "Luxury Booking Engine",
+    "description": "A hotel booking app built with Python and Streamlit. Handles credit card validation, room and spa upgrades, and generates PDF booking confirmations automatically.",
     "tech": [
       { "name": "python", "type": "language" },
-      { "name": "sqlite", "type": "tool" }
+      { "name": "streamlit", "type": "tool" }
     ],
-    "liveUrl": null,
-    "sourceUrl": "https://github.com/AndrewTechTips/Scrapify",
-    "featured": false,
-    "priority": 13
+    "liveUrl": "https://lux-booking.streamlit.app/",
+    "sourceUrl": "https://github.com/AndrewTechTips/Hotel-Booking",
+    "section": "archive",
+    "category": "Python tools & desktop apps",
+    "priority": 12
   },
   {
     "id": "weather-forecast-dashboard",
@@ -294,33 +315,9 @@
     ],
     "liveUrl": "https://weathrly.streamlit.app/",
     "sourceUrl": "https://github.com/AndrewTechTips/Weather-Forecast-Data-App",
-    "featured": false,
-    "priority": 14
-  },
-  {
-    "id": "luxury-booking-engine",
-    "title": "Luxury Booking Engine",
-    "description": "A hotel booking app built with Python and Streamlit. Handles credit card validation, room and spa upgrades, and generates PDF booking confirmations automatically.",
-    "tech": [
-      { "name": "python", "type": "language" },
-      { "name": "streamlit", "type": "tool" }
-    ],
-    "liveUrl": "https://lux-booking.streamlit.app/",
-    "sourceUrl": "https://github.com/AndrewTechTips/Hotel-Booking",
-    "featured": false,
-    "priority": 15
-  },
-  {
-    "id": "news-email-automation",
-    "title": "News Email Automation",
-    "description": "A script that pulls topic-specific articles from NewsAPI and sends a formatted daily digest by email over Gmail SMTP.",
-    "tech": [
-      { "name": "python", "type": "language" }
-    ],
-    "liveUrl": null,
-    "sourceUrl": "https://github.com/AndrewTechTips/Automated-News-Mail",
-    "featured": false,
-    "priority": 16
+    "section": "archive",
+    "category": "Python tools & desktop apps",
+    "priority": 13
   },
   {
     "id": "batch-invoice-generator",
@@ -332,8 +329,22 @@
     ],
     "liveUrl": null,
     "sourceUrl": "https://github.com/AndrewTechTips/Excel_Invoices_To_Pdf",
-    "featured": false,
-    "priority": 17
+    "section": "archive",
+    "category": "Python tools & desktop apps",
+    "priority": 14
+  },
+  {
+    "id": "news-email-automation",
+    "title": "News Email Automation",
+    "description": "A script that pulls topic-specific articles from NewsAPI and sends a formatted daily digest by email over Gmail SMTP.",
+    "tech": [
+      { "name": "python", "type": "language" }
+    ],
+    "liveUrl": null,
+    "sourceUrl": "https://github.com/AndrewTechTips/Automated-News-Mail",
+    "section": "archive",
+    "category": "Python tools & desktop apps",
+    "priority": 15
   },
   {
     "id": "archive-manager",
@@ -344,8 +355,62 @@
     ],
     "liveUrl": null,
     "sourceUrl": "https://github.com/AndrewTechTips/Archive-Manager",
-    "featured": false,
+    "section": "archive",
+    "category": "Python tools & desktop apps",
+    "priority": 16
+  },
+  {
+    "id": "wordle-cli",
+    "title": "Wordle CLI",
+    "description": "A terminal clone of Wordle with color-coded feedback, dictionary validation via pyenchant, and a persistent win-streak tracker.",
+    "tech": [
+      { "name": "python", "type": "language" }
+    ],
+    "liveUrl": null,
+    "sourceUrl": "https://github.com/AndrewTechTips/Worlde-Game",
+    "section": "archive",
+    "category": "Python tools & desktop apps",
+    "priority": 17
+  },
+  {
+    "id": "binary-search-tree",
+    "title": "Binary Search Tree",
+    "description": "A balanced binary search tree implemented from scratch in ES6. Covers node insertion, deletion, and BFS/DFS traversal, with full Jest test coverage.",
+    "tech": [
+      { "name": "javascript", "type": "language" },
+      { "name": "jest", "type": "tool" }
+    ],
+    "liveUrl": null,
+    "sourceUrl": "https://github.com/AndrewTechTips/Binary-Search-Trees",
+    "section": "archive",
+    "category": "JavaScript",
     "priority": 18
+  },
+  {
+    "id": "knights-travails",
+    "title": "Knight's Travails",
+    "description": "An algorithm that finds the shortest path between two squares on a chessboard using breadth-first search and a queue-based structure.",
+    "tech": [
+      { "name": "javascript", "type": "language" }
+    ],
+    "liveUrl": null,
+    "sourceUrl": "https://github.com/AndrewTechTips/Knight-Travails-JS",
+    "section": "archive",
+    "category": "JavaScript",
+    "priority": 19
+  },
+  {
+    "id": "hashmap",
+    "title": "HashMap",
+    "description": "A hash map implemented from scratch in ES6, handling collisions with separate chaining and auto-resizing based on a set load factor.",
+    "tech": [
+      { "name": "javascript", "type": "language" }
+    ],
+    "liveUrl": null,
+    "sourceUrl": "https://github.com/AndrewTechTips/HashMap-Implementation",
+    "section": "archive",
+    "category": "JavaScript",
+    "priority": 20
   },
   {
     "id": "horizon-weather",
@@ -357,44 +422,22 @@
     ],
     "liveUrl": "https://andrewtechtips.github.io/Weather-App/",
     "sourceUrl": "https://github.com/AndrewTechTips/Weather-App",
-    "featured": false,
-    "priority": 19
-  },
-  {
-    "id": "battleship",
-    "title": "BattleShip",
-    "description": "A browser-based Battleship game written in object-oriented JavaScript. Includes drag-and-drop ship placement, a randomized CPU opponent, and full Jest test coverage.",
-    "tech": [
-      { "name": "javascript", "type": "language" },
-      { "name": "jest", "type": "tool" }
-    ],
-    "liveUrl": "https://andrewtechtips.github.io/Project-BattleShip/",
-    "sourceUrl": "https://github.com/AndrewTechTips/Project-BattleShip",
-    "featured": false,
-    "priority": 20
-  },
-  {
-    "id": "wordle-cli",
-    "title": "Wordle CLI",
-    "description": "A terminal clone of Wordle with color-coded feedback, dictionary validation via pyenchant, and a persistent win-streak tracker.",
-    "tech": [
-      { "name": "python", "type": "language" }
-    ],
-    "liveUrl": null,
-    "sourceUrl": "https://github.com/AndrewTechTips/Worlde-Game",
-    "featured": false,
+    "section": "archive",
+    "category": "JavaScript",
     "priority": 21
   },
   {
-    "id": "modern-calculator",
-    "title": "Modern Calculator",
-    "description": "A responsive calculator built with vanilla JavaScript. Handles edge cases like division by zero and formats results in scientific notation when needed.",
+    "id": "ace-barbers",
+    "title": "Ace Barbers",
+    "description": "A dark, bilingual landing page for a barbershop, rebuilt from a design template by hand: scroll reveals on IntersectionObserver, a marquee, and a small RO/EN translation engine that remembers the visitor's choice.",
     "tech": [
-      { "name": "javascript", "type": "language" }
+      { "name": "javascript", "type": "language" },
+      { "name": "html5", "type": "language" }
     ],
-    "liveUrl": "https://andrewtechtips.github.io/project-calculator/",
-    "sourceUrl": "https://github.com/AndrewTechTips/project-calculator",
-    "featured": false,
+    "liveUrl": "https://andrewtechtips.github.io/cxr-barbershop/",
+    "sourceUrl": "https://github.com/AndrewTechTips/cxr-barbershop",
+    "section": "archive",
+    "category": "JavaScript",
     "priority": 22
   },
   {
@@ -407,7 +450,8 @@
     ],
     "liveUrl": "https://andrewtechtips.github.io/Todo-List/",
     "sourceUrl": "https://github.com/AndrewTechTips/Todo-List",
-    "featured": false,
+    "section": "archive",
+    "category": "JavaScript",
     "priority": 23
   },
   {
@@ -419,7 +463,8 @@
     ],
     "liveUrl": "https://andrewtechtips.github.io/project-library/",
     "sourceUrl": "https://github.com/AndrewTechTips/project-library",
-    "featured": false,
+    "section": "archive",
+    "category": "JavaScript",
     "priority": 24
   },
   {
@@ -431,7 +476,8 @@
     ],
     "liveUrl": "https://andrewtechtips.github.io/Tic-Tac-Toe/",
     "sourceUrl": "https://github.com/AndrewTechTips/Tic-Tac-Toe",
-    "featured": false,
+    "section": "archive",
+    "category": "JavaScript",
     "priority": 25
   },
   {
@@ -444,8 +490,22 @@
     ],
     "liveUrl": "https://andrewtechtips.github.io/restaurant-page/",
     "sourceUrl": "https://github.com/AndrewTechTips/restaurant-page",
-    "featured": false,
+    "section": "archive",
+    "category": "JavaScript",
     "priority": 26
+  },
+  {
+    "id": "modern-calculator",
+    "title": "Modern Calculator",
+    "description": "A responsive calculator built with vanilla JavaScript. Handles edge cases like division by zero and formats results in scientific notation when needed.",
+    "tech": [
+      { "name": "javascript", "type": "language" }
+    ],
+    "liveUrl": "https://andrewtechtips.github.io/project-calculator/",
+    "sourceUrl": "https://github.com/AndrewTechTips/project-calculator",
+    "section": "archive",
+    "category": "JavaScript",
+    "priority": 27
   },
   {
     "id": "rock-paper-scissors-battle",
@@ -456,8 +516,9 @@
     ],
     "liveUrl": "https://andrewtechtips.github.io/rock-paper-scissors/",
     "sourceUrl": "https://github.com/AndrewTechTips/rock-paper-scissors",
-    "featured": false,
-    "priority": 27
+    "section": "archive",
+    "category": "JavaScript",
+    "priority": 28
   },
   {
     "id": "etch-a-sketch",
@@ -468,8 +529,9 @@
     ],
     "liveUrl": "https://andrewtechtips.github.io/Etch-a-Sketch/",
     "sourceUrl": "https://github.com/AndrewTechTips/Etch-a-Sketch",
-    "featured": false,
-    "priority": 28
+    "section": "archive",
+    "category": "JavaScript",
+    "priority": 29
   },
   {
     "id": "nexus-admin-dashboard",
@@ -480,8 +542,9 @@
     ],
     "liveUrl": "https://andrewtechtips.github.io/admin-dashboard/",
     "sourceUrl": "https://github.com/AndrewTechTips/admin-dashboard",
-    "featured": false,
-    "priority": 29
+    "section": "archive",
+    "category": "HTML & CSS",
+    "priority": 30
   },
   {
     "id": "glassmorphism-sign-up-form",
@@ -492,8 +555,9 @@
     ],
     "liveUrl": "https://andrewtechtips.github.io/sign-up-form/",
     "sourceUrl": "https://github.com/AndrewTechTips/sign-up-form",
-    "featured": false,
-    "priority": 30
+    "section": "archive",
+    "category": "HTML & CSS",
+    "priority": 31
   },
   {
     "id": "meridian-watches",
@@ -504,7 +568,8 @@
     ],
     "liveUrl": "https://andrewtechtips.github.io/landing-page/",
     "sourceUrl": "https://github.com/AndrewTechTips/landing-page",
-    "featured": false,
-    "priority": 31
+    "section": "archive",
+    "category": "HTML & CSS",
+    "priority": 32
   }
 ]

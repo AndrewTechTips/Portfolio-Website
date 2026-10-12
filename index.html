@@ -32,7 +32,7 @@
      broken widget. -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'sha256-4y0yFOGoUDp37aLMhv4c6WGO90NUjOlQReIwSxXh73U=' 'sha256-C9Pc74x5BP660fRg4HJ6AmFM9IpoprZO7TSDFKmjYzw='; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' blob:; connect-src 'self' blob: https://formsubmit.co https://api.github.com; form-action https://formsubmit.co; object-src 'none'; base-uri 'self';">
 <meta name="theme-color" content="#000000">
-<meta name="description" content="Andrei Condrea — full-stack developer based in Constanța, Romania. FastAPI and Django on the backend, JavaScript on the frontend. Portfolio of backend, API, and web projects.">
+<meta name="description" content="Andrei Condrea — full-stack developer based in Constanța, Romania. FastAPI and PostgreSQL on the backend, plain JavaScript on the front end. Portfolio of backend, API, and web projects.">
 <link rel="canonical" href="https://andrewtechtips.github.io/Portfolio-Website/">
 
 <!-- docs/preview.jpg (1400×681, ~2.05:1) is a real hero screenshot, not the portrait profile
@@ -43,7 +43,7 @@
 <meta property="og:url" content="https://andrewtechtips.github.io/Portfolio-Website/">
 <meta property="og:site_name" content="Andrei Condrea — Software Engineer">
 <meta property="og:title" content="Andrei Condrea — Software Engineer">
-<meta property="og:description" content="Full-stack developer based in Constanța, Romania. FastAPI and Django on the backend, JavaScript on the frontend.">
+<meta property="og:description" content="Full-stack developer based in Constanța, Romania. FastAPI and PostgreSQL on the backend, plain JavaScript on the front end.">
 <meta property="og:image" content="https://andrewtechtips.github.io/Portfolio-Website/docs/preview.jpg">
 <meta property="og:image:width" content="1400">
 <meta property="og:image:height" content="681">
@@ -52,7 +52,7 @@
 
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Andrei Condrea — Software Engineer">
-<meta name="twitter:description" content="Full-stack developer based in Constanța, Romania. FastAPI and Django on the backend, JavaScript on the frontend.">
+<meta name="twitter:description" content="Full-stack developer based in Constanța, Romania. FastAPI and PostgreSQL on the backend, plain JavaScript on the front end.">
 <meta name="twitter:image" content="https://andrewtechtips.github.io/Portfolio-Website/docs/preview.jpg">
 <meta name="twitter:image:alt" content="Andrei Condrea's portfolio homepage, showing the 'Full-Stack Developer' hero with an animated bronze horse model.">
 
@@ -72,7 +72,7 @@
       "url": "https://andrewtechtips.github.io/Portfolio-Website/",
       "image": "https://andrewtechtips.github.io/Portfolio-Website/assets/profile.jpeg",
       "jobTitle": "Software Engineer",
-      "description": "Full-stack developer based in Constanța, Romania, working with FastAPI, Django, and JavaScript.",
+      "description": "Full-stack developer based in Constanța, Romania, working with FastAPI, PostgreSQL and JavaScript.",
       "address": {
         "@type": "PostalAddress",
         "addressLocality": "Constanța",
@@ -174,8 +174,8 @@
   <div class="slide" id="slide-1">
     <h2 class="slide-title">Full-Stack <br>Developer</h2>
     <div class="desc-row">
-      <p class="slide-desc col-1">Computer Science student and full-stack developer based in Constanța, Romania. I build software that solves real problems, not portfolio filler.</p>
-      <p class="slide-desc col-2">FastAPI and Django on the backend, JavaScript on the front end. I care more about code that works under real usage than about buzzwords.</p>
+      <p class="slide-desc col-1">I'm a Computer Science student in Constanța, Romania, and I build web apps end to end, from the database schema to the button you tap.</p>
+      <p class="slide-desc col-2">Most of it is FastAPI and PostgreSQL behind plain JavaScript. Right now I'm also studying for Azure's AZ-900 and starting on machine learning.</p>
     </div>
   </div>
   <div class="slide-image-mask" id="slide-2-img">
@@ -187,15 +187,15 @@
   </div>
   <div class="slide" id="slide-2">
     <h2 class="slide-title">Backend <br>&amp; APIs</h2>
-    <p class="slide-desc">Most of my time goes into backend architecture — REST APIs, databases, and the parts of an app that have to hold up under real traffic. FastAPI is my go-to these days, with Django still in the mix for projects that need its admin and ORM out of the box.</p>
+    <p class="slide-desc">Most of my hours go into the backend: FastAPI services, PostgreSQL schemas, auth I'd trust with my own account, and tests that tell me when I've broken something. My last three projects all run on FastAPI, from a calorie tracker to a camera hub that fits on a Raspberry Pi.</p>
   </div>
   <div class="slide" id="slide-3">
     <h2 class="slide-title">Frontend</h2>
-    <p class="slide-desc">On the front end I build interfaces that are fast and easy to use, not just easy to look at. Clean state, no unnecessary dependencies.</p>
+    <p class="slide-desc">On the front end I write plain JavaScript with JSDoc types, and reach for a framework only when a project needs one. My apps install on a phone, work from the keyboard, and still open when the Wi-Fi drops.</p>
   </div>
   <div class="slide" id="slide-4">
     <h2 class="slide-title">Open <br>to Work</h2>
-    <p class="slide-desc">I'm currently looking for new opportunities in software engineering. If you have a role or a project worth building, reach out below.</p>
+    <p class="slide-desc">I'm looking for a junior backend or full-stack role, or an internship. If you're hiring, or just want to talk about something you're building, send me a message.</p>
   </div>
 </div>
 
@@ -263,7 +263,7 @@
 <section class="project-section" id="work" tabindex="-1">
   <div class="project-section-header">
     <h2 class="project-section-title">Selected Work</h2>
-    <p class="project-section-subtitle">A collection of things I've built.</p>
+    <p class="project-section-subtitle">The three I'd show you first, then a few more. Everything older is in the archive.</p>
 
     <!-- Live GitHub stats — see setupGithubStats() in main.js. Painted instantly from
          localStorage (or the baked-in seed below), then quietly refreshed from the API in
@@ -288,23 +288,73 @@
   <p class="sr-only" id="project-status-announcer" role="status" aria-live="polite"></p>
 
   <div class="project-featured-section" id="featured-section">
-    <h3 class="project-subsection-title">Featured Work</h3>
+    <h3 class="project-subsection-title">Featured</h3>
     <div class="project-grid project-grid-featured" id="featured-project-grid"><!-- populated from PROJECTS via JS --></div>
   </div>
 
-  <div class="project-other-section" id="other-section">
-    <h3 class="project-subsection-title">Other Projects</h3>
-    <div class="project-grid" id="other-project-grid"><!-- populated from PROJECTS via JS --></div>
-    <div class="show-more-wrapper" id="show-more-wrapper">
-      <button type="button" class="project-btn project-btn-outline" id="show-more-btn">
-        <span id="show-more-label">Show More</span> <span class="btn-circle"></span>
+  <div class="project-more-section" id="more-section">
+    <h3 class="project-subsection-title">Also worth a look</h3>
+    <div class="project-grid" id="more-project-grid"><!-- populated from PROJECTS via JS --></div>
+  </div>
+
+  <!-- Everything else, as a grouped list instead of cards, collapsed until asked for. The rows
+       are rendered up front (hidden) so the command palette can jump straight to one — see
+       renderArchive() and setupArchiveToggle() in main.js. -->
+  <div class="project-archive-section" id="archive-section">
+    <div class="archive-header">
+      <div>
+        <h3 class="project-subsection-title">Archive</h3>
+        <p class="archive-lead">Earlier projects, coursework and practice: the Django and Flask apps, desktop tools, and the JavaScript I wrote while learning it properly.</p>
+      </div>
+      <button type="button" class="project-btn project-btn-outline archive-toggle" id="archive-toggle"
+              aria-expanded="false" aria-controls="archive-body">
+        <span id="archive-toggle-label">Show all projects</span> <span class="btn-circle"></span>
       </button>
     </div>
+    <div class="archive-body" id="archive-body" hidden><!-- populated from PROJECTS via JS --></div>
   </div>
 
   <div class="project-empty-state" id="project-empty-state">
     <h3>No projects found</h3>
     <p>Try a different filter.</p>
+  </div>
+</section>
+
+<!-- Certificates. Static markup like the anatomy section below it: a handful of entries doesn't
+     need a data file, and adding one is copying an <li>. An entry links out only where there is
+     something real to link to. -->
+<section class="certs-section" id="certificates" tabindex="-1" aria-labelledby="certs-title">
+  <div class="certs-inner">
+    <header class="certs-header">
+      <h2 class="certs-title" id="certs-title">Certificates</h2>
+      <p class="certs-lead">Courses I've finished and exams I've passed. The projects above say more about how I work; this is the paper trail.</p>
+    </header>
+    <ul class="certs-grid">
+      <li class="cert-card">
+        <span class="cert-issuer">Harvard University</span>
+        <h3 class="cert-title">CS50's Introduction to Programming with Python</h3>
+        <p class="cert-body">CS50P: functions, exceptions, libraries, unit tests, file I/O, regular expressions and object-oriented Python, with a problem set every week and a final project of my own.</p>
+        <div class="cert-meta">
+          <!-- TODO(certificate): year, and the certificate's own link once the material is in. -->
+          <a class="cert-link" href="https://cs50.harvard.edu/python/" target="_blank" rel="noopener">Course page <span aria-hidden="true">&#8599;</span></a>
+        </div>
+      </li>
+      <li class="cert-card">
+        <span class="cert-issuer">Cambridge University Press &amp; Assessment</span>
+        <!-- TODO(certificate): the exact qualification and level, e.g. "B2 First" or "C1 Advanced". -->
+        <h3 class="cert-title">Cambridge English Qualification</h3>
+        <p class="cert-body">Reading, writing, listening and speaking, assessed by Cambridge. English is the language I study in, read documentation in, and write every one of my project READMEs in.</p>
+      </li>
+      <!-- TODO(certificate): BitSentinel — title, year and link come with the material. -->
+      <li class="cert-card cert-card--pending">
+        <span class="cert-issuer">Microsoft</span>
+        <h3 class="cert-title">Azure Fundamentals (AZ-900)</h3>
+        <p class="cert-body">Cloud concepts, the core Azure services, and how security, governance and pricing work on Azure. I'm preparing for the exam now.</p>
+        <div class="cert-meta">
+          <span class="cert-status">In progress</span>
+        </div>
+      </li>
+    </ul>
   </div>
 </section>
 
